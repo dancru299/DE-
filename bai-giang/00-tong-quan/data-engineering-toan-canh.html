@@ -1,0 +1,679 @@
+<title>Bức Tranh Data Engineering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#E9EEF0;
+  --card:#F9FBFC;
+  --ink:#0B1D2A;
+  --ink-2:#52667A;
+  --line:#CBD6DC;
+  --accent:#0F6E8C;
+  --accent-soft:rgba(15,110,140,.10);
+  --bronze:#A0693A;
+  --silver:#6F8090;
+  --gold:#A6841F;
+  --mark:#A8453E;
+  --mark-soft:rgba(168,69,62,.10);
+  --code-bg:#0A1A24;
+  --code-ink:#DCE8EE;
+  --code-line:#1B303D;
+  --code-dim:#748C9B;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#08131A;
+    --card:#101E28;
+    --ink:#E4EDF1;
+    --ink-2:#8A9EAE;
+    --line:#1F323F;
+    --accent:#4FC3E8;
+    --accent-soft:rgba(79,195,232,.13);
+    --bronze:#D69A62;
+    --silver:#A3B4C2;
+    --gold:#DFBB55;
+    --mark:#E77A70;
+    --mark-soft:rgba(231,122,112,.13);
+    --code-bg:#050F15;
+    --code-ink:#DCE8EE;
+    --code-line:#182C38;
+    --code-dim:#748C9B;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#08131A;
+  --card:#101E28;
+  --ink:#E4EDF1;
+  --ink-2:#8A9EAE;
+  --line:#1F323F;
+  --accent:#4FC3E8;
+  --accent-soft:rgba(79,195,232,.13);
+  --bronze:#D69A62;
+  --silver:#A3B4C2;
+  --gold:#DFBB55;
+  --mark:#E77A70;
+  --mark-soft:rgba(231,122,112,.13);
+  --code-bg:#050F15;
+  --code-ink:#DCE8EE;
+  --code-line:#182C38;
+  --code-dim:#748C9B;
+}
+
+*{box-sizing:border-box}
+
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+  font-size:17px;line-height:1.72;margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px 96px}
+
+.mono-lab{
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.69rem;letter-spacing:.15em;text-transform:uppercase;font-weight:500;
+}
+
+/* ---------- hero ---------- */
+.hero{padding:76px 0 40px;border-bottom:2px solid var(--ink)}
+.hero .mono-lab{color:var(--accent);display:block;margin-bottom:22px}
+.hero h1{
+  font-family:"Chivo","Arial Black",system-ui,sans-serif;
+  font-weight:900;letter-spacing:-.035em;line-height:.94;
+  font-size:clamp(2.7rem,8.4vw,5rem);margin:0 0 24px;text-wrap:balance;
+}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.dek{font-size:clamp(1.05rem,2.3vw,1.26rem);color:var(--ink-2);max-width:62ch;margin:0 0 32px}
+.facts{display:flex;flex-wrap:wrap;gap:12px 30px}
+.fact{display:flex;flex-direction:column;gap:1px}
+.fact span:first-child{
+  font-family:"IBM Plex Mono",monospace;font-size:.65rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-2);
+}
+.fact span:last-child{font-weight:600;font-size:.95rem}
+
+/* ---------- sections ---------- */
+.sec{
+  display:grid;grid-template-columns:96px 1fr;gap:0 34px;
+  padding:52px 0;border-bottom:1px solid var(--line);
+}
+.sec:last-of-type{border-bottom:none}
+.rail{padding-top:.4rem}
+.rail .n{
+  font-family:"Chivo",system-ui,sans-serif;font-weight:900;
+  font-size:1.5rem;line-height:1;color:var(--accent);
+  font-variant-numeric:tabular-nums;display:block;
+}
+.rail .stage{
+  font-family:"IBM Plex Mono",monospace;font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-2);display:block;margin-top:6px;line-height:1.4;
+}
+.sec h2{
+  font-family:"Chivo","Arial Black",system-ui,sans-serif;
+  font-weight:800;letter-spacing:-.028em;line-height:1.1;
+  font-size:clamp(1.55rem,4vw,2.15rem);margin:0 0 18px;text-wrap:balance;
+}
+.sec h3{
+  font-family:"Chivo",system-ui,sans-serif;font-weight:700;
+  font-size:1.08rem;letter-spacing:-.015em;margin:34px 0 10px;
+}
+.sec p{margin:0 0 16px;max-width:66ch}
+.body-col{min-width:0}
+.body-col > *:first-child{margin-top:0}
+strong{font-weight:600}
+
+@media (max-width:780px){
+  .sec{grid-template-columns:1fr;gap:0}
+  .rail{padding-top:0;margin-bottom:14px;display:flex;align-items:baseline;gap:10px}
+  .rail .n{font-size:1.15rem}
+  .rail .stage{margin-top:0}
+}
+
+/* ---------- callout ---------- */
+.tip{
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  padding:16px 20px;margin:24px 0;border-radius:0 3px 3px 0;max-width:66ch;
+}
+.tip .mono-lab{color:var(--accent);display:block;margin-bottom:6px}
+.tip p{margin:0}
+.tip p + p{margin-top:10px}
+.warn{border-left-color:var(--mark);background:var(--mark-soft)}
+.warn .mono-lab{color:var(--mark)}
+
+/* ---------- code ---------- */
+.code{
+  background:var(--code-bg);color:var(--code-ink);border:1px solid var(--code-line);
+  border-radius:5px;margin:22px 0;overflow:hidden;
+}
+.code-bar{
+  display:flex;align-items:center;gap:9px;padding:9px 14px;
+  border-bottom:1px solid var(--code-line);
+  font-family:"IBM Plex Mono",monospace;font-size:.67rem;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--code-dim);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);opacity:.75;flex:none}
+.code pre{
+  margin:0;padding:16px 18px;overflow-x:auto;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.845rem;line-height:1.72;
+}
+.c{color:var(--code-dim)}
+.k{color:#7FC8E8}
+.s{color:#9AD6AE}
+code:not(pre code){
+  font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.84em;
+  background:var(--accent-soft);color:var(--accent);
+  padding:.12em .38em;border-radius:3px;
+}
+
+/* ---------- table ---------- */
+.table-scroll{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:5px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.93rem}
+th{
+  text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.64rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);
+  padding:12px 16px;border-bottom:1px solid var(--line);font-weight:500;
+}
+td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.term td:first-child{
+  white-space:nowrap;font-family:"IBM Plex Mono",monospace;
+  font-size:.81rem;color:var(--accent);font-weight:500;
+}
+td.who{white-space:nowrap;font-weight:600}
+
+/* ---------- cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(218px,1fr));gap:14px;margin:24px 0}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:5px;
+  padding:18px 18px 18px 20px;position:relative;
+}
+.card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;background:var(--accent);border-radius:0 2px 2px 0}
+.card.b::before{background:var(--bronze)}
+.card.s::before{background:var(--silver)}
+.card.g::before{background:var(--gold)}
+.card h4{font-family:"Chivo",system-ui,sans-serif;font-weight:800;font-size:1.04rem;letter-spacing:-.02em;margin:0 0 3px}
+.card .role{
+  font-family:"IBM Plex Mono",monospace;font-size:.62rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink-2);display:block;margin-bottom:10px;
+}
+.card p{margin:0;font-size:.92rem;line-height:1.6;color:var(--ink-2)}
+.card p b{color:var(--ink);font-weight:600}
+
+/* ---------- lists ---------- */
+ul.plain{list-style:none;padding:0;margin:18px 0;max-width:66ch;display:flex;flex-direction:column;gap:13px}
+ul.plain li{padding-left:26px;position:relative}
+ul.plain li::before{content:"";position:absolute;left:0;top:.66em;width:10px;height:2px;background:var(--accent)}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;max-width:66ch;display:flex;flex-direction:column;gap:18px;margin:20px 0}
+ol.steps li{counter-increment:s;padding-left:38px;position:relative}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:.1em;width:24px;height:24px;
+  border:1.5px solid var(--accent);color:var(--accent);border-radius:3px;
+  font-family:"IBM Plex Mono",monospace;font-size:.73rem;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ---------- figures ---------- */
+figure{margin:28px 0;padding:0}
+.fig-box{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:20px 18px;overflow-x:auto}
+figure svg{width:100%;height:auto;display:block;min-width:520px}
+figcaption{font-size:.82rem;color:var(--ink-2);margin-top:10px}
+svg text{font-family:"Be Vietnam Pro",system-ui,sans-serif}
+svg .t-lab{font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.12em;font-weight:500}
+
+/* ---------- closing ---------- */
+.closing{margin-top:56px;background:var(--code-bg);color:var(--code-ink);border-radius:6px;padding:40px 34px}
+.closing h2{font-family:"Chivo",system-ui,sans-serif;font-weight:800;letter-spacing:-.028em;font-size:clamp(1.5rem,4vw,2rem);margin:0 0 8px;color:var(--code-ink)}
+.closing .mono-lab{color:var(--accent);display:block;margin-bottom:16px}
+.closing p{color:var(--code-dim);max-width:62ch;margin:0}
+.recall{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:1px;margin-top:26px;background:var(--code-line)}
+.recall div{background:var(--code-bg);padding:16px 18px}
+.recall b{
+  display:block;font-family:"IBM Plex Mono",monospace;color:var(--accent);
+  font-size:.65rem;letter-spacing:.13em;text-transform:uppercase;margin-bottom:7px;font-weight:500;
+}
+.recall span{font-size:.91rem;line-height:1.6;color:var(--code-ink)}
+
+::selection{background:var(--accent);color:var(--paper)}
+a{color:var(--accent)}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="mono-lab">Bài giảng toàn cảnh · Dành cho Dev chuyển sang DE</span>
+  <h1>Data engineer<br>rốt cuộc <em>làm gì?</em></h1>
+  <p class="dek">Nghề này có quá nhiều từ lạ: lake, warehouse, ELT, DAG, medallion, lineage. Bài này không dạy từng công cụ — nó dựng cho bạn tấm bản đồ để mọi từ đó có chỗ đứng.</p>
+  <div class="facts">
+    <div class="fact"><span>Thời lượng</span><span>~25 phút đọc</span></div>
+    <div class="fact"><span>Cần biết trước</span><span>SQL cơ bản, biết lập trình</span></div>
+    <div class="fact"><span>Sau bài này</span><span>Nghe họp DE không lạc</span></div>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="rail"><span class="n">01</span><span class="stage">Định nghĩa</span></div>
+  <div class="body-col">
+    <h2>Một câu định nghĩa, một ví von</h2>
+    <p><strong>Data engineer là người xây và vận hành đường ống đưa dữ liệu từ nơi nó sinh ra tới nơi nó được dùng để ra quyết định — đúng, đủ, đúng giờ.</strong></p>
+    <p>Ví von sát nhất là <strong>công ty cấp nước</strong>. Nước sông không ai uống được: có phù sa, có vi khuẩn, lưu lượng lúc mạnh lúc yếu. Công ty cấp nước hút nước thô về, lắng, lọc, khử trùng, trữ vào bể sạch, rồi dẫn tới từng vòi nhà dân.</p>
+    <p>Dữ liệu y hệt. Dữ liệu thô từ ứng dụng thì lộn xộn, trùng lặp, thiếu trường, đổi cấu trúc bất ngờ. Không ai ra quyết định trực tiếp trên đó được. Data engineer làm đúng việc của nhà máy nước.</p>
+    <div class="tip">
+      <span class="mono-lab">Hệ quả quan trọng của ví von này</span>
+      <p>Không ai khen công ty cấp nước khi mở vòi có nước. Người ta chỉ gọi điện khi nước đục hoặc mất nước.</p>
+      <p>Nghề DE cũng vậy: <strong>làm tốt thì vô hình, làm hỏng thì cả công ty biết</strong>. Vì thế phần lớn công sức đổ vào độ tin cậy chứ không phải tính năng mới — điều này khác hẳn thói quen làm sản phẩm bên dev.</p>
+    </div>
+    <h3>Sản phẩm của bạn giao cho ai</h3>
+    <ul class="plain">
+      <li><strong>Analyst và người kinh doanh</strong> — cần bảng số liệu và báo cáo tin được, không cần biết dữ liệu đi đường nào.</li>
+      <li><strong>Data scientist và ML engineer</strong> — cần dữ liệu lịch sử sạch, đủ dài, để huấn luyện mô hình.</li>
+      <li><strong>Chính ứng dụng</strong> — gợi ý sản phẩm, phát hiện gian lận, bảng điều khiển trong app.</li>
+    </ul>
+    <p>Ba nhóm này là "hộ dân" của bạn. Chất lượng công việc DE đo bằng việc họ có tin được vào con số hay không.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">02</span><span class="stage">Bản đồ</span></div>
+  <div class="body-col">
+    <h2>Toàn cảnh một hệ thống dữ liệu</h2>
+    <p>Đây là tấm bản đồ của cả bài. Mọi khái niệm bạn từng nghe đều rơi vào <em>một</em> ô nào đó trong hình này — các phần sau chỉ là phóng to từng ô.</p>
+
+    <figure>
+      <div class="fig-box">
+        <svg viewBox="0 0 640 348" role="img" aria-label="Sơ đồ sáu tầng của hệ thống dữ liệu, từ nguồn tới phục vụ, kèm cột điều phối chất lượng quản trị chạy xuyên suốt">
+          <defs>
+            <marker id="d1" markerWidth="7" markerHeight="7" refX="3.5" refY="6" orient="auto">
+              <path d="M0 0 L7 0 L3.5 7 z" fill="var(--accent)"/>
+            </marker>
+          </defs>
+
+          <g stroke="var(--line)" stroke-width="1.4" fill="var(--paper)">
+            <rect x="8" y="20" width="516" height="38" rx="4"/>
+            <rect x="8" y="280" width="516" height="38" rx="4"/>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.4" fill="var(--accent-soft)">
+            <rect x="8" y="72" width="516" height="38" rx="4"/>
+            <rect x="8" y="124" width="516" height="38" rx="4"/>
+            <rect x="8" y="176" width="516" height="38" rx="4"/>
+            <rect x="8" y="228" width="516" height="38" rx="4"/>
+          </g>
+
+          <g font-size="12.5" font-weight="600" fill="var(--ink)">
+            <text x="24" y="38">Nguồn</text>
+            <text x="24" y="90">Thu thập</text>
+            <text x="24" y="142">Vùng thô — Data Lake</text>
+            <text x="24" y="194">Biến đổi</text>
+            <text x="24" y="246">Kho phân tích — Warehouse</text>
+            <text x="24" y="298">Phục vụ</text>
+          </g>
+          <g font-size="10" fill="var(--ink-2)">
+            <text x="24" y="52">database của app · API dịch vụ ngoài · file, log, sự kiện</text>
+            <text x="24" y="104">chạy theo lô · chạy liên tục · bắt thay đổi từ database</text>
+            <text x="24" y="156">giữ nguyên bản gốc, chưa làm sạch, lưu rẻ, giữ lâu</text>
+            <text x="24" y="208">làm sạch · gộp bảng · mô hình hoá theo nghiệp vụ</text>
+            <text x="24" y="260">dữ liệu sạch, có cấu trúc, sẵn sàng để truy vấn</text>
+            <text x="24" y="312">báo cáo BI · mô hình học máy · API trả về cho ứng dụng</text>
+          </g>
+
+          <g stroke="var(--accent)" stroke-width="1.4" fill="none">
+            <path d="M266 60 V68" marker-end="url(#d1)"/>
+            <path d="M266 112 V120" marker-end="url(#d1)"/>
+            <path d="M266 164 V172" marker-end="url(#d1)"/>
+            <path d="M266 216 V224" marker-end="url(#d1)"/>
+            <path d="M266 268 V276" marker-end="url(#d1)"/>
+          </g>
+
+          <rect x="540" y="20" width="92" height="298" rx="4" fill="none" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <g transform="translate(586,169) rotate(-90)" text-anchor="middle">
+            <text y="-6" font-size="11.5" font-weight="600" fill="var(--ink)">Điều phối · Chất lượng</text>
+            <text y="10" font-size="11.5" font-weight="600" fill="var(--ink)">Quản trị · Chi phí</text>
+            <text y="26" font-size="9.5" fill="var(--ink-2)">chạy xuyên suốt mọi tầng</text>
+          </g>
+
+          <text class="t-lab" x="8" y="12" fill="var(--ink-2)">NGƯỜI KHÁC SỞ HỮU</text>
+          <text class="t-lab" x="524" y="12" text-anchor="end" fill="var(--accent)">PHẦN CỦA DATA ENGINEER</text>
+        </svg>
+      </div>
+      <figcaption>Bốn tầng tô màu là nơi bạn sống. Tầng trên cùng do đội sản phẩm sở hữu, tầng dưới cùng do analyst và data scientist sở hữu.</figcaption>
+    </figure>
+
+    <div class="tip">
+      <span class="mono-lab">Đọc bản đồ này thế nào</span>
+      <p>Dữ liệu chảy từ trên xuống. Nhưng cột bên phải mới là thứ phân biệt người mới với người có kinh nghiệm: <strong>điều phối, chất lượng, quản trị và chi phí không phải một tầng riêng — chúng bao trùm mọi tầng</strong>. Người mới thường chỉ nhìn thấy cột trái.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">03</span><span class="stage">Ai là ai</span></div>
+  <div class="body-col">
+    <h2>DE, DA, DS, AE, MLE — ai làm gì</h2>
+    <p>Mấy chữ viết tắt này gây rối nhiều nhất khi mới vào nghề. Phân biệt bằng <strong>câu hỏi mà mỗi vai trả lời</strong>:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Vai trò</th><th>Trả lời câu hỏi</th><th>Công cụ chính</th></tr></thead>
+        <tbody>
+          <tr><td class="who">Data Engineer</td><td>Làm sao đưa dữ liệu tới đúng chỗ, đúng giờ, tin được?</td><td>SQL, Python, Spark, Airflow</td></tr>
+          <tr><td class="who">Analytics Engineer</td><td>Làm sao biến bảng thô thành mô hình nghiệp vụ ai cũng hiểu?</td><td>SQL, dbt</td></tr>
+          <tr><td class="who">Data Analyst</td><td>Chuyện gì đã xảy ra, và vì sao?</td><td>SQL, BI, bảng tính</td></tr>
+          <tr><td class="who">Data Scientist</td><td>Chuyện gì sẽ xảy ra tiếp theo?</td><td>Python, thống kê, ML</td></tr>
+          <tr><td class="who">ML Engineer</td><td>Làm sao đưa mô hình ra chạy thật và giữ nó sống?</td><td>Python, MLOps, hạ tầng</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Ranh giới thực tế rất mờ, đặc biệt ở công ty nhỏ — một người có thể ôm cả năm vai. Nhưng trọng tâm thì rõ: <strong>DE lo đường ống, DA lo diễn giải, DS lo dự đoán.</strong></p>
+    <div class="tip">
+      <span class="mono-lab">Vị trí Analytics Engineer</span>
+      <p>Đây là vai trò mới nổi và đang rất thiếu người: đứng giữa DE và DA, chuyên viết SQL để mô hình hoá dữ liệu bằng dbt. Nếu bạn từ dev sang mà mạnh SQL và hiểu nghiệp vụ, <strong>đây thường là cửa vào dễ nhất</strong>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">04</span><span class="stage">Tầng 2<br>Thu thập</span></div>
+  <div class="body-col">
+    <h2>Đưa dữ liệu về: batch hay streaming</h2>
+    <p>Có hai kiểu hút nước, và gần như mọi tranh luận về ingestion đều quy về chọn giữa hai kiểu này.</p>
+    <ul class="plain">
+      <li><strong>Batch — theo lô.</strong> Cứ mỗi giờ (hoặc mỗi đêm) lấy một mẻ dữ liệu về. Đơn giản, rẻ, dễ sửa khi sai. <strong>Chiếm khoảng 90% nhu cầu thực tế.</strong></li>
+      <li><strong>Streaming — liên tục.</strong> Dữ liệu về ngay khi vừa sinh ra, tính bằng giây. Đắt hơn nhiều, khó gỡ lỗi hơn nhiều. Chỉ dùng khi độ trễ thật sự là vấn đề: phát hiện gian lận, theo dõi thiết bị, giá cả thay đổi theo thời gian thực.</li>
+    </ul>
+    <div class="tip warn">
+      <span class="mono-lab">Cái bẫy kinh điển của người mới</span>
+      <p>Ai mới vào nghề cũng muốn xây streaming vì nghe hiện đại. Hãy hỏi ngược lại: <strong>"báo cáo này chậm 1 tiếng thì ai chết?"</strong> Phần lớn câu trả lời là không ai cả. Chọn batch, tiết kiệm được hàng tháng công sức và rất nhiều tiền hạ tầng.</p>
+    </div>
+
+    <h3>CDC — bắt thay đổi từ database</h3>
+    <p>Cách ngây thơ để lấy dữ liệu là <code>SELECT *</code> cả bảng mỗi đêm. Bảng vài trăm triệu dòng thì cách này giết luôn database sản phẩm.</p>
+    <p><strong>CDC</strong> (Change Data Capture) đọc <em>nhật ký thay đổi</em> của database — cùng thứ mà bản sao dự phòng dùng — nên chỉ lấy về những dòng vừa thêm, sửa, xoá. Gần như không gây tải cho hệ thống nguồn. Đây là cách chuẩn để đồng bộ database sản phẩm về kho phân tích.</p>
+
+    <h3>Ba từ bạn sẽ nghe mỗi ngày</h3>
+    <div class="table-scroll">
+      <table class="term">
+        <thead><tr><th>Thuật ngữ</th><th>Nghĩa thật sự là gì</th></tr></thead>
+        <tbody>
+          <tr><td>full load</td><td>Lấy lại toàn bộ. Đơn giản nhưng nặng — chỉ hợp bảng nhỏ.</td></tr>
+          <tr><td>incremental</td><td>Chỉ lấy phần mới kể từ lần chạy trước, thường dựa vào cột thời gian cập nhật.</td></tr>
+          <tr><td>backfill</td><td>Chạy lại quá khứ. Ví dụ vừa sửa lỗi logic, cần tính lại sáu tháng dữ liệu đã sai.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">05</span><span class="stage">Tầng 3 &amp; 5<br>Lưu trữ</span></div>
+  <div class="body-col">
+    <h2>Chỗ hay nhầm nhất: database, warehouse hay lake?</h2>
+    <p>Từ dev sang, đây là điểm vấp đầu tiên. Bạn quen với database của ứng dụng và tưởng warehouse cũng chỉ là "một database to hơn". Không phải — chúng được thiết kế cho hai loại câu hỏi hoàn toàn khác nhau.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th></th><th>Database ứng dụng (OLTP)</th><th>Kho phân tích (OLAP)</th></tr></thead>
+        <tbody>
+          <tr><td class="who">Phục vụ</td><td>Hàng nghìn giao dịch nhỏ mỗi giây</td><td>Vài truy vấn khổng lồ mỗi phút</td></tr>
+          <tr><td class="who">Câu hỏi mẫu</td><td>"Đơn hàng số 8421 gồm những gì?"</td><td>"Doanh thu theo tỉnh 3 năm qua?"</td></tr>
+          <tr><td class="who">Lưu theo</td><td>Dòng — lấy nguyên một bản ghi rất nhanh</td><td>Cột — quét một cột qua tỉ dòng rất nhanh</td></tr>
+          <tr><td class="who">Tối ưu cho</td><td>Ghi và sửa</td><td>Đọc và tổng hợp</td></tr>
+          <tr><td class="who">Ví dụ</td><td>PostgreSQL, MySQL</td><td>BigQuery, Snowflake, Redshift</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <span class="mono-lab">Vì sao lưu theo cột lại nhanh đến vậy</span>
+      <p>Câu hỏi "tổng doanh thu năm ngoái" chỉ cần <em>hai</em> cột: ngày và số tiền. Lưu theo dòng thì máy buộc phải đọc cả trăm cột của mọi bản ghi rồi vứt đi 98%. Lưu theo cột thì nó đọc đúng hai cột đó. Cùng một dữ liệu, chênh nhau hàng chục lần tốc độ và tiền.</p>
+    </div>
+
+    <h3>Còn Data Lake và Lakehouse?</h3>
+    <ul class="plain">
+      <li><strong>Data Lake</strong> — cái bể chứa nước thô. Thực chất là kho file giá rẻ (S3, GCS) chứa mọi thứ ở dạng nguyên bản: file, log, ảnh, JSON. Nhận hết, chưa cần biết sau này dùng để làm gì.</li>
+      <li><strong>Data Warehouse</strong> — bể nước sạch. Dữ liệu đã lọc, có cấu trúc chặt chẽ, ai truy vấn cũng ra cùng một con số.</li>
+      <li><strong>Lakehouse</strong> — xu hướng những năm gần đây: giữ giá rẻ và tính linh hoạt của lake, nhưng thêm được bảng biểu và giao dịch như warehouse. Tên thường gặp: Delta Lake, Apache Iceberg.</li>
+    </ul>
+    <div class="tip warn">
+      <span class="mono-lab">Vì sao lake dễ biến thành đầm lầy</span>
+      <p>Đổ dữ liệu vào lake rất dễ, nên người ta đổ vô tội vạ, không ghi chú, không ai sở hữu. Vài năm sau không ai biết file nào là gì, có tin được không. Giới trong nghề gọi đó là <strong>data swamp</strong>. Thuốc phòng bệnh là danh mục dữ liệu và quy ước đặt tên — ngay từ ngày đầu.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">06</span><span class="stage">Tầng 4<br>Biến đổi</span></div>
+  <div class="body-col">
+    <h2>ETL, ELT và ba lớp huy chương</h2>
+    <p>Cùng ba việc — lấy ra, biến đổi, nạp vào — chỉ khác thứ tự, mà đổi hẳn cách làm nghề:</p>
+    <ul class="plain">
+      <li><strong>ETL</strong> — biến đổi <em>trước</em>, rồi mới nạp vào kho. Cách cũ, sinh ra thời kho tính toán còn đắt đỏ. Nhược điểm: bản thô bị vứt đi, muốn tính lại kiểu khác thì phải lấy lại từ nguồn.</li>
+      <li><strong>ELT</strong> — nạp bản thô vào trước, rồi biến đổi ngay bên trong kho bằng SQL. Cách phổ biến hiện nay, vì kho hiện đại tính toán rất mạnh và rẻ. Ưu điểm lớn: <strong>bản gốc luôn còn đó</strong>, sai logic thì chỉ cần chạy lại phép biến đổi.</li>
+    </ul>
+    <p>Đó là lý do <strong>dbt</strong> trở nên phổ biến: nó cho phép viết toàn bộ phần "T" bằng SQL thuần, có kiểm thử và tài liệu đi kèm, quản lý bằng Git như code bình thường.</p>
+
+    <h3>Ba lớp huy chương</h3>
+    <p>Cách tổ chức dữ liệu được dùng rộng rãi nhất hiện nay. Tên nghe kêu nhưng ý tưởng rất đơn giản — giống ba bể lắng lọc nối tiếp:</p>
+    <div class="cards">
+      <div class="card b">
+        <h4>Bronze</h4>
+        <span class="role">Thô · nguyên bản</span>
+        <p>Y hệt như lấy từ nguồn về, <b>không sửa một chữ nào</b>. Vai trò: bằng chứng gốc. Khi có tranh cãi về số liệu, đây là nơi đối chiếu.</p>
+      </div>
+      <div class="card s">
+        <h4>Silver</h4>
+        <span class="role">Sạch · đã chuẩn hoá</span>
+        <p>Đã bỏ trùng, sửa kiểu dữ liệu, thống nhất định dạng ngày và đơn vị, gộp các bảng liên quan. <b>Đúng nhưng chưa gắn với nghiệp vụ cụ thể.</b></p>
+      </div>
+      <div class="card g">
+        <h4>Gold</h4>
+        <span class="role">Sẵn dùng · theo nghiệp vụ</span>
+        <p>Bảng phục vụ thẳng cho báo cáo và mô hình: doanh thu theo ngày, khách hàng theo phân khúc. <b>Đây là thứ người dùng cuối chạm vào.</b></p>
+      </div>
+    </div>
+    <div class="tip">
+      <span class="mono-lab">Vì sao phải tách ba lớp</span>
+      <p>Để <strong>lỗi có chỗ để lộ ra</strong>. Nếu nhảy thẳng từ thô sang báo cáo, một thay đổi nhỏ ở nguồn sẽ âm thầm làm sai con số cuối mà không ai biết. Có lớp trung gian thì kiểm thử đặt được ở giữa, và khi sai thì khoanh vùng được ngay.</p>
+    </div>
+
+    <h3>Mô hình hoá: fact và dimension</h3>
+    <p>Ở tầng gold, cách tổ chức bảng phổ biến nhất là <strong>star schema</strong>, chỉ gồm hai loại bảng:</p>
+    <ul class="plain">
+      <li><strong>Fact</strong> — bảng ghi lại <em>sự việc đã xảy ra</em>, luôn kèm số đo: mỗi dòng là một đơn hàng, một lượt xem, một giao dịch. Rất dài, tăng liên tục.</li>
+      <li><strong>Dimension</strong> — bảng mô tả <em>bối cảnh</em>: khách hàng nào, sản phẩm gì, cửa hàng ở đâu, ngày nào. Ngắn hơn nhiều, đổi chậm.</li>
+    </ul>
+    <p>Mọi câu hỏi kinh doanh đều có dạng "đo cái gì, cắt theo chiều nào" — và đó chính xác là fact cắt theo dimension. Nhớ được cặp này là đọc được hầu hết thiết kế kho dữ liệu.</p>
+    <div class="tip">
+      <span class="mono-lab">SCD — chiều thay đổi chậm</span>
+      <p>Một khách hàng chuyển từ Hà Nội vào Đà Nẵng. Đơn hàng năm ngoái của họ nên tính cho tỉnh nào? Nếu ghi đè địa chỉ, toàn bộ báo cáo quá khứ đổi theo — thường là sai. Kỹ thuật <strong>SCD Type 2</strong> giữ lại cả hai phiên bản kèm khoảng thời gian hiệu lực, nhờ đó lịch sử không bị viết lại.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">07</span><span class="stage">Xuyên suốt<br>Điều phối</span></div>
+  <div class="body-col">
+    <h2>Điều phối: nhạc trưởng của hệ thống</h2>
+    <p>Một pipeline thật không phải một script. Nó là hàng chục bước phụ thuộc nhau: phải lấy xong dữ liệu đơn hàng <em>rồi mới</em> gộp được với khách hàng, <em>rồi mới</em> tính được doanh thu.</p>
+    <p>Công cụ điều phối (<strong>Airflow</strong>, <strong>Dagster</strong>, <strong>Prefect</strong>) mô tả các bước đó thành một <strong>DAG</strong> — sơ đồ các việc nối bằng mũi tên, không được có vòng lặp quay ngược. Nó lo giúp bạn: chạy đúng thứ tự, chạy song song chỗ nào được, thử lại khi lỗi, báo động khi trễ hạn.</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>một DAG đọc ra thành lời</div>
+      <pre>lấy_đơn_hàng ──┐
+               ├──&gt; gộp_dữ_liệu ──&gt; tính_doanh_thu ──&gt; gửi_báo_cáo
+lấy_khách_hàng ┘
+
+<span class="c"># hai việc đầu chạy song song</span>
+<span class="c"># ba việc sau xếp hàng, việc trước xong việc sau mới chạy</span></pre>
+    </div>
+
+    <h3>Idempotency — khái niệm quan trọng nhất phần này</h3>
+    <p>Một job <strong>idempotent</strong> là job chạy một lần hay mười lần trên cùng khoảng dữ liệu đều cho ra kết quả y hệt.</p>
+    <p>Nghe hàn lâm, nhưng đây là ranh giới giữa pipeline ngủ ngon và pipeline gọi điện lúc 3 giờ sáng. Job lỗi giữa chừng là chuyện xảy ra hàng tuần. Nếu chạy lại mà dữ liệu bị cộng dồn hai lần, bạn phải dọn tay giữa đêm. Nếu job idempotent, bạn chỉ việc bấm chạy lại.</p>
+    <div class="tip">
+      <span class="mono-lab">Cách làm cho job idempotent</span>
+      <p>Đừng dùng "thêm dòng mới" (<code>INSERT</code>). Hãy dùng <strong>ghi đè theo phân vùng</strong> — xoá sạch dữ liệu của ngày đang xử lý rồi ghi lại — hoặc <code>MERGE</code>/upsert theo khoá. Nguyên tắc: <strong>mỗi lần chạy phải tự dọn dẹp phần của chính nó.</strong></p>
+    </div>
+    <div class="tip warn">
+      <span class="mono-lab">Dữ liệu về trễ</span>
+      <p>Một giao dịch lúc 23:58 nhưng 00:03 mới về tới kho. Job chạy lúc 00:00 sẽ bỏ sót nó, và con số hôm đó vĩnh viễn thiếu. Đây gọi là <strong>late-arriving data</strong> — nguyên nhân số một khiến báo cáo lệch mà không ai giải thích được. Cách xử lý thông thường là chấp nhận độ trễ an toàn và tính lại vài ngày gần nhất mỗi lần chạy.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">08</span><span class="stage">Xuyên suốt<br>Chất lượng</span></div>
+  <div class="body-col">
+    <h2>Tin được hay không: phần quyết định uy tín</h2>
+    <p>Một pipeline chạy đúng giờ nhưng ra số sai còn tệ hơn một pipeline chết hẳn — vì pipeline chết thì ai cũng biết, còn số sai thì người ta cứ thế mang đi họp.</p>
+    <p><strong>Rác vào, rác ra.</strong> Nhiệm vụ của bạn là chặn rác ngay cửa, chứ không phải giải thích ở cuối đường ống.</p>
+
+    <h3>Bốn loại kiểm thử dữ liệu nên có từ ngày đầu</h3>
+    <div class="table-scroll">
+      <table class="term">
+        <thead><tr><th>Loại kiểm tra</th><th>Câu hỏi nó trả lời</th></tr></thead>
+        <tbody>
+          <tr><td>not null</td><td>Cột bắt buộc có bị rỗng không?</td></tr>
+          <tr><td>unique</td><td>Khoá chính có bị trùng không? Trùng khoá là gấp đôi doanh thu.</td></tr>
+          <tr><td>accepted values</td><td>Cột trạng thái có giá trị lạ nào ngoài danh sách cho phép không?</td></tr>
+          <tr><td>freshness</td><td>Dữ liệu mới nhất là lúc nào? Trễ quá ngưỡng thì báo động.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Bốn thứ này bắt được phần lớn sự cố thật, và viết bằng dbt chỉ mất vài dòng cấu hình.</p>
+
+    <h3>Ba từ hay gặp trong họp</h3>
+    <ul class="plain">
+      <li><strong>Lineage</strong> — sơ đồ phả hệ của dữ liệu: bảng này sinh ra từ bảng nào, và nếu sửa nó thì báo cáo nào gãy theo. Câu hỏi "đổi cột này có ai chết không" chỉ trả lời được nếu có lineage.</li>
+      <li><strong>Data contract</strong> — thoả thuận giữa đội sinh ra dữ liệu và đội dùng dữ liệu: cấu trúc gồm những gì, đổi thì phải báo trước. Sinh ra để chống <strong>schema drift</strong> — đội sản phẩm đổi tên một cột, pipeline của bạn gãy mà không ai báo.</li>
+      <li><strong>Observability</strong> — theo dõi sức khoẻ đường ống: chạy mất bao lâu, số dòng có đột biến không, trễ bao nhiêu. Giống giám sát hệ thống bên dev, nhưng đối tượng theo dõi là dữ liệu chứ không phải máy chủ.</li>
+    </ul>
+    <div class="tip">
+      <span class="mono-lab">Chỉ số nghề nghiệp đáng nhớ</span>
+      <p>Người có kinh nghiệm đo mình bằng câu: <strong>"Sự cố dữ liệu được phát hiện bởi hệ thống của tôi, hay bởi sếp trong cuộc họp?"</strong> Chuyển từ vế sau sang vế trước chính là toàn bộ nội dung của phần này.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">09</span><span class="stage">Xuyên suốt<br>Quản trị</span></div>
+  <div class="body-col">
+    <h2>Quản trị, bảo mật và chi phí</h2>
+    <p>Phần này ít được dạy nhất nhưng lại là thứ khiến người ta mất việc nhanh nhất. DE là nghề <strong>cầm chìa khoá kho dữ liệu của cả công ty</strong> — quyền lớn, trách nhiệm tương ứng.</p>
+    <ul class="plain">
+      <li><strong>PII</strong> — dữ liệu định danh cá nhân: tên, số điện thoại, email, số giấy tờ, địa chỉ. Cần được đánh dấu riêng và đối xử khác với dữ liệu thường.</li>
+      <li><strong>Masking</strong> — che bớt khi hiển thị (<code>09xxxxx678</code>), hoặc <strong>hashing</strong> — thay hẳn bằng mã băm để vẫn gộp nhóm được mà không đọc được người thật.</li>
+      <li><strong>Least privilege</strong> — mỗi người và mỗi job chỉ được cấp đúng quyền tối thiểu cần dùng. Đừng để pipeline chạy bằng tài khoản quản trị cao nhất.</li>
+      <li><strong>Retention</strong> — dữ liệu cá nhân không được giữ vô thời hạn. Cần có chính sách xoá theo thời hạn và cơ chế xoá theo yêu cầu người dùng.</li>
+    </ul>
+    <div class="tip warn">
+      <span class="mono-lab">Ba thói quen tự bảo vệ mình</span>
+      <p>Không bao giờ để <strong>chuỗi kết nối, mật khẩu hay khoá API</strong> nằm trong code hoặc notebook — dùng kho bí mật của hệ thống.</p>
+      <p>Không lấy dữ liệu thật về máy cá nhân để "thử cho nhanh". Dữ liệu ra khỏi vùng kiểm soát rồi thì không thu về được.</p>
+      <p>Không dán dữ liệu thật, schema thật hay log có chứa dữ liệu khách hàng vào <strong>công cụ bên ngoài</strong> — kể cả công cụ AI. Cần ví dụ thì tự bịa dữ liệu mẫu; nghiệp vụ vẫn nguyên mà rủi ro bằng không.</p>
+    </div>
+
+    <h3>Chi phí là một yêu cầu kỹ thuật</h3>
+    <p>Bên dev, một truy vấn chậm thì người dùng chờ lâu. Bên DE, một truy vấn viết ẩu quét nhầm 40 TB có thể tốn vài trăm đô <em>trong một lần chạy</em> — và nếu nó nằm trong job chạy mỗi giờ thì nhân lên 24 lần mỗi ngày.</p>
+    <p>Hai thói quen giải quyết gần hết vấn đề: <strong>phân vùng theo ngày</strong> để mỗi truy vấn chỉ quét đúng khoảng thời gian cần, và <strong>không bao giờ viết <code>SELECT *</code></strong> trên kho lưu theo cột — chỉ gọi đúng cột mình dùng.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">10</span><span class="stage">Công cụ</span></div>
+  <div class="body-col">
+    <h2>Bản đồ công cụ — và lời khuyên đừng học hết</h2>
+    <p>Danh sách công cụ ngành này dài vô tận và đổi liên tục. Cách duy nhất để không ngợp là <strong>nhớ theo tầng, không nhớ theo tên</strong>: mỗi tầng chỉ cần biết một cái tiêu biểu, gặp cái mới thì xếp nó vào tầng tương ứng là hiểu ngay.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Tầng</th><th>Tên hay gặp</th><th>Nên học đầu tiên</th></tr></thead>
+        <tbody>
+          <tr><td class="who">Thu thập</td><td>Fivetran, Airbyte, Debezium, Kafka</td><td>Airbyte</td></tr>
+          <tr><td class="who">Lưu trữ</td><td>BigQuery, Snowflake, Redshift, S3, Iceberg</td><td>BigQuery hoặc Snowflake</td></tr>
+          <tr><td class="who">Xử lý lớn</td><td>Spark, Flink, Trino, DuckDB</td><td>Spark</td></tr>
+          <tr><td class="who">Biến đổi</td><td>dbt, SQLMesh</td><td>dbt</td></tr>
+          <tr><td class="who">Điều phối</td><td>Airflow, Dagster, Prefect</td><td>Airflow</td></tr>
+          <tr><td class="who">Chất lượng</td><td>Great Expectations, Soda, dbt tests</td><td>dbt tests</td></tr>
+          <tr><td class="who">Phục vụ</td><td>Looker, Metabase, Power BI, Superset</td><td>Metabase</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <span class="mono-lab">Thứ tự ưu tiên nếu bạn từ dev sang</span>
+      <p>Thời gian học nên chia đại khái: <strong>SQL 50%</strong> — sâu, không chỉ biết join; <strong>Python cho xử lý dữ liệu 20%</strong>; <strong>một công cụ điều phối 15%</strong>; <strong>một kho phân tích trên đám mây 10%</strong>; phần còn lại là mô hình hoá dữ liệu.</p>
+      <p>SQL chiếm nửa vì nó là thứ duy nhất <strong>không đổi trong hai mươi năm qua</strong>. Công cụ thì năm năm lại thay một lứa.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">11</span><span class="stage">Từ điển</span></div>
+  <div class="body-col">
+    <h2>Từ điển bỏ túi cho cuộc họp đầu tiên</h2>
+    <p>Những từ sẽ được ném ra mà không ai giải thích. Đọc qua một lượt là đủ để không bị lạc:</p>
+    <div class="table-scroll">
+      <table class="term">
+        <thead><tr><th>Từ</th><th>Nghĩa gọn</th></tr></thead>
+        <tbody>
+          <tr><td>pipeline</td><td>Chuỗi bước đưa dữ liệu từ nguồn tới đích.</td></tr>
+          <tr><td>job / task</td><td>Một bước chạy được trong pipeline.</td></tr>
+          <tr><td>DAG</td><td>Sơ đồ các bước và thứ tự phụ thuộc, không có vòng lặp quay ngược.</td></tr>
+          <tr><td>upstream / downstream</td><td>Nằm trước / nằm sau trong dòng chảy. "Lỗi ở upstream" = lỗi từ nguồn.</td></tr>
+          <tr><td>idempotent</td><td>Chạy lại bao nhiêu lần cũng ra kết quả như nhau.</td></tr>
+          <tr><td>backfill</td><td>Chạy lại cho dữ liệu quá khứ.</td></tr>
+          <tr><td>partition</td><td>Chia bảng thành lát, thường theo ngày, để chỉ quét phần cần.</td></tr>
+          <tr><td>upsert / merge</td><td>Có thì cập nhật, chưa có thì thêm mới.</td></tr>
+          <tr><td>schema drift</td><td>Cấu trúc dữ liệu nguồn đổi mà không báo trước.</td></tr>
+          <tr><td>lineage</td><td>Phả hệ: bảng này từ đâu ra, ai đang phụ thuộc vào nó.</td></tr>
+          <tr><td>SLA</td><td>Cam kết dữ liệu sẵn sàng trước mấy giờ.</td></tr>
+          <tr><td>data mart</td><td>Một góc nhỏ của kho, gọt riêng cho một phòng ban.</td></tr>
+          <tr><td>single source of truth</td><td>Một bảng được công nhận là chuẩn, hết cảnh mỗi phòng một con số.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">12</span><span class="stage">Chuyển nghề</span></div>
+  <div class="body-col">
+    <h2>Từ Dev sang DE: mang theo gì, học lại gì</h2>
+    <p>Tin tốt trước: bạn đã có sẵn phần lớn nền tảng.</p>
+    <ul class="plain">
+      <li><strong>Mang theo được</strong> — Git, kiểm thử, CI/CD, Docker, đọc log, tư duy thiết kế hệ thống. Ngành dữ liệu vài năm gần đây chính là đang học lại những thói quen này từ bên dev.</li>
+      <li><strong>Phải học mới</strong> — SQL ở mức sâu, mô hình hoá dữ liệu, tư duy phân tán, và quan trọng nhất: hiểu nghiệp vụ. Con số chỉ đúng khi bạn hiểu nó đo cái gì.</li>
+    </ul>
+
+    <h3>Bốn chỗ tư duy phải đổi</h3>
+    <ol class="steps">
+      <li><strong>Không có nút hoàn tác.</strong> Bên dev, deploy hỏng thì rollback. Bên DE, một job ghi đè sai lên bảng lịch sử là dữ liệu mất thật. Vì thế mới có bronze giữ bản gốc, mới cần idempotency.</li>
+      <li><strong>Đúng quan trọng hơn nhanh.</strong> Báo cáo chậm một tiếng là chuyện nhỏ. Báo cáo sai một con số rồi có người ra quyết định dựa vào đó mới là chuyện lớn.</li>
+      <li><strong>Đầu vào luôn phản bội bạn.</strong> API bên dev có hợp đồng rõ ràng. Dữ liệu nguồn thì đổi cấu trúc không báo, về trễ, thỉnh thoảng gửi trùng. Thiết kế với giả định <em>nguồn sẽ hỏng</em>, không phải nếu nó hỏng.</li>
+      <li><strong>Chi phí là chuyện của bạn.</strong> Bên dev hiếm khi nghĩ tới tiền cho mỗi lần chạy. Bên DE, một câu SQL viết ẩu là một hoá đơn.</li>
+    </ol>
+
+    <h3>Lộ trình 90 ngày</h3>
+    <ol class="steps">
+      <li><strong>Tháng 1 — SQL cho đến khi thành thạo thật.</strong> Window function, CTE, và quan trọng nhất là đọc được kế hoạch thực thi để biết vì sao truy vấn chậm.</li>
+      <li><strong>Tháng 2 — dựng một pipeline nhỏ trọn vẹn.</strong> Lấy dữ liệu từ một API công khai bất kỳ, nạp vào kho miễn phí, biến đổi bằng dbt, hẹn giờ bằng Airflow. Nhỏ cũng được, nhưng phải đủ cả sáu tầng trong bản đồ ở phần 02.</li>
+      <li><strong>Tháng 3 — làm nó đáng tin.</strong> Thêm kiểm thử, thêm cảnh báo, cố tình phá cho nó gãy rồi sửa. Viết tài liệu ngắn giải thích từng bảng. Đây mới là phần khiến hồ sơ của bạn khác đám đông.</li>
+    </ol>
+    <div class="tip">
+      <span class="mono-lab">Bài tập giá trị nhất</span>
+      <p>Khi pipeline đã chạy, hãy <strong>tự phá nó</strong>: đổi tên một cột ở nguồn, gửi trùng một lô dữ liệu, cho job chết giữa chừng rồi bấm chạy lại. Ba tình huống này là thứ bạn sẽ gặp hàng tuần trong nghề. Xử lý được cả ba trên một dự án cá nhân, bạn đã đi trước phần lớn người mới.</p>
+    </div>
+  </div>
+</section>
+
+<div class="closing">
+  <span class="mono-lab">Nếu chỉ nhớ được bốn điều</span>
+  <h2>Bản tóm tắt 30 giây</h2>
+  <p>Bốn ô này là bộ khung để treo mọi khái niệm còn lại. Mọi thứ bạn học thêm sau này đều gắn được vào một trong bốn chỗ.</p>
+  <div class="recall">
+    <div><b>Bạn là nhà máy nước</b><span>Đưa dữ liệu thô thành dữ liệu dùng được: đúng, đủ, đúng giờ. Làm tốt thì vô hình.</span></div>
+    <div><b>Sáu tầng, hai cột</b><span>Nguồn → thu thập → lake → biến đổi → warehouse → phục vụ. Điều phối và quản trị bao trùm tất cả.</span></div>
+    <div><b>Chạy lại phải an toàn</b><span>Idempotency là ranh giới giữa ngủ ngon và bị gọi lúc 3 giờ sáng.</span></div>
+    <div><b>SQL là khoản đầu tư dài nhất</b><span>Công cụ năm năm thay một lứa. SQL và tư duy mô hình hoá thì không.</span></div>
+  </div>
+</div>
+
+</div>

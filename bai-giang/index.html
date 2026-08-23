@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thư viện bài giảng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;800;900&family=Be+Vietnam+Pro:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#EEF0F1; --card:#FAFBFB; --ink:#14191D; --ink-2:#5A6670; --line:#D3D9DD;
+  --c0:#0F6E8C; --c1:#C04A1B; --c2:#6A4B9E; --c3:#0E7A5F; --c4:#96761B; --c5:#A8453E; --c6:#9B3768;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0B0F13; --card:#141A20; --ink:#E6EBEE; --ink-2:#8D9AA4; --line:#232C34;
+  --c0:#4FC3E8; --c1:#FF7A42; --c2:#B79BEA; --c3:#3FCB99; --c4:#DFBB55; --c5:#E77A70; --c6:#F08FBB;
+}}
+:root[data-theme="dark"]{
+  --paper:#0B0F13; --card:#141A20; --ink:#E6EBEE; --ink-2:#8D9AA4; --line:#232C34;
+  --c0:#4FC3E8; --c1:#FF7A42; --c2:#B79BEA; --c3:#3FCB99; --c4:#DFBB55; --c5:#E77A70; --c6:#F08FBB;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);margin:0;
+  font-family:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;font-size:16.5px;line-height:1.65;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:0 24px 80px}
+.lab{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.67rem;letter-spacing:.15em;text-transform:uppercase;font-weight:500}
+
+header{padding:68px 0 34px;border-bottom:2px solid var(--ink)}
+header .lab{color:var(--ink-2);display:block;margin-bottom:18px}
+h1{font-family:"Chivo","Arial Black",system-ui,sans-serif;font-weight:900;letter-spacing:-.035em;
+  font-size:clamp(2.3rem,7vw,3.6rem);line-height:1;margin:0 0 18px}
+header p{color:var(--ink-2);max-width:58ch;margin:0}
+
+.hint{display:flex;gap:14px;align-items:flex-start;margin:30px 0 8px;padding:15px 18px;
+  background:var(--card);border:1px solid var(--line);border-radius:5px;max-width:62ch}
+.hint b{font-weight:600}
+.hint p{margin:0;font-size:.93rem;color:var(--ink-2)}
+.hint p b{color:var(--ink)}
+
+.grp{padding:40px 0 8px;border-bottom:1px solid var(--line)}
+.grp:last-of-type{border-bottom:none}
+.ghead{display:flex;align-items:baseline;gap:12px;margin-bottom:4px}
+.gnum{font-family:"Chivo",system-ui,sans-serif;font-weight:900;font-size:1.5rem;line-height:1;
+  color:var(--gc);font-variant-numeric:tabular-nums}
+.gname{font-family:"Chivo",system-ui,sans-serif;font-weight:800;font-size:1.22rem;letter-spacing:-.025em}
+.gsub{font-size:.88rem;color:var(--ink-2);margin:0 0 18px}
+
+.items{display:flex;flex-direction:column;gap:10px}
+a.item{display:block;text-decoration:none;color:inherit;background:var(--card);
+  border:1px solid var(--line);border-radius:5px;padding:16px 18px 16px 20px;position:relative}
+a.item::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;
+  background:var(--gc);border-radius:0 2px 2px 0}
+a.item:hover{border-color:var(--gc)}
+a.item:focus-visible{outline:2px solid var(--gc);outline-offset:2px}
+.it{font-family:"Chivo",system-ui,sans-serif;font-weight:700;font-size:1.02rem;letter-spacing:-.018em;margin-bottom:3px}
+.id{font-size:.9rem;color:var(--ink-2);line-height:1.55}
+.io{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--ink-2);
+  margin-top:8px;display:block;word-break:break-all}
+.io b{color:var(--gc);font-weight:500}
+
+footer{margin-top:48px;padding-top:26px;border-top:1px solid var(--line);font-size:.88rem;color:var(--ink-2)}
+footer p{max-width:64ch;margin:0 0 12px}
+footer b{color:var(--ink);font-weight:600}
+code{font-family:"IBM Plex Mono",monospace;font-size:.85em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="lab">Workspace · Desktop/Test</span>
+  <h1>Thư viện bài giảng</h1>
+  <p>Mười một bài giảng gom về một chỗ, xếp theo đúng dòng chảy dữ liệu — trùng với bản đồ 6 tầng trong bài tổng quan. Bấm vào bài bất kỳ để mở. Nhóm 04 có kèm bộ bài tập chạy được trên máy.</p>
+  <div class="hint">
+    <p><b>Chưa biết bắt đầu từ đâu?</b> Đọc bài <b>Toàn cảnh Data Engineering</b> trước để có bản đồ, rồi đi tuần tự từ nhóm 01 xuống 05. Mỗi nhóm là một tầng trong bản đồ đó.</p>
+  </div>
+</header>
+
+<section class="grp" style="--gc:var(--c0)">
+  <div class="ghead"><span class="gnum">00</span><span class="gname">Tổng quan</span></div>
+  <p class="gsub">Bản đồ của mọi thứ còn lại. Đọc trước tiên.</p>
+  <div class="items">
+    <a class="item" href="00-tong-quan/data-engineering-toan-canh.html">
+      <div class="it">Bức tranh Data Engineering</div>
+      <div class="id">Bản đồ 6 tầng của hệ thống dữ liệu · phân biệt DE / DA / DS / AE / MLE · ETL vs ELT · ba lớp medallion · từ điển thuật ngữ · lộ trình 90 ngày</div>
+      <span class="io"><b>soạn mới</b> · 2026-08-21</span>
+    </a>
+  </div>
+</section>
+
+<section class="grp" style="--gc:var(--c1)">
+  <div class="ghead"><span class="gnum">01</span><span class="gname">Nền tảng hạ tầng</span></div>
+  <p class="gsub">Thứ chạy bên dưới mọi pipeline.</p>
+  <div class="items">
+    <a class="item" href="01-nen-tang-ha-tang/docker-nhap-mon.html">
+      <div class="it">Docker cho người mới</div>
+      <div class="id">Image / container / registry · Dockerfile từng dòng · <code>-p</code> và <code>-v</code> · Compose · 5 lỗi người mới hay gặp</div>
+      <span class="io"><b>soạn mới</b> · 2026-08-21</span>
+    </a>
+    <a class="item" href="01-nen-tang-ha-tang/kubernetes-nhap-mon.html">
+      <div class="it">Kubernetes cho người mới</div>
+      <div class="id">Vòng lặp mong muốn vs thực tế · Pod / Deployment / Service / Ingress · kubectl · cách đọc trạng thái lỗi</div>
+      <span class="io"><b>soạn mới</b> · 2026-08-21</span>
+    </a>
+  </div>
+</section>
+
+<section class="grp" style="--gc:var(--c2)">
+  <div class="ghead"><span class="gnum">02</span><span class="gname">Thu thập dữ liệu</span></div>
+  <p class="gsub">Tầng 2 — đưa dữ liệu từ nguồn về.</p>
+  <div class="items">
+    <a class="item" href="02-thu-thap-du-lieu/kafka-connect-flow.html">
+      <div class="it">Luồng dữ liệu Kafka Connect</div>
+      <div class="id">Kafka Connect (CDC) × Redpanda Connect — đường đi của một bản ghi</div>
+      <span class="io"><b>gốc:</b> Apache_Kafka/kafka-connect-flow.html</span>
+    </a>
+    <a class="item" href="02-thu-thap-du-lieu/cdc-pipeline-simulator.html">
+      <div class="it">Trình giả lập pipeline CDC</div>
+      <div class="id">Chạy thử pipeline CDC ngay trong trình duyệt, không cần dựng hạ tầng</div>
+      <span class="io"><b>gốc:</b> Apache_Kafka/cdc-pipeline-simulator.html</span>
+    </a>
+  </div>
+</section>
+
+<section class="grp" style="--gc:var(--c3)">
+  <div class="ghead"><span class="gnum">03</span><span class="gname">Lưu trữ &amp; truy vấn</span></div>
+  <p class="gsub">Tầng 3 và 5 — bể chứa thô và kho phân tích.</p>
+  <div class="items">
+    <a class="item" href="03-luu-tru-truy-van/clickhouse-lab-mo-phong.html">
+      <div class="it">Mô phỏng ClickHouse</div>
+      <div class="id">Thấy tận mắt cơ chế bên trong một kho lưu theo cột</div>
+      <span class="io"><b>gốc:</b> ClickHouse/lab-mo-phong-clickhouse.html</span>
+    </a>
+    <a class="item" href="03-luu-tru-truy-van/clickhouse-materialized-view.html">
+      <div class="it">Materialized View trong ClickHouse</div>
+      <div class="id"><code>page_views</code> → MV → <code>views_hourly</code> — tổng hợp sẵn khi dữ liệu vừa ghi vào</div>
+      <span class="io"><b>gốc:</b> ClickHouse/bai4-mo-phong-mv.html</span>
+    </a>
+  </div>
+</section>
+
+<section class="grp" style="--gc:var(--c6)">
+  <div class="ghead"><span class="gnum">04</span><span class="gname">Biến đổi dữ liệu</span></div>
+  <p class="gsub">Tầng 4 — nơi dữ liệu thô thành dữ liệu dùng được. Có bài tập chạy được ngay.</p>
+  <div class="items">
+    <a class="item" href="04-bien-doi-du-lieu/sql-cho-de.html">
+      <div class="it">SQL cho Data Engineer</div>
+      <div class="id">Hàm cửa sổ · khử trùng · chia phiên · SCD2 · idempotency · 4 cái bẫy im lặng · dbt từ ref() tới model incremental — kèm <b>25 bài SQL + 7 bài dbt</b> chạy được trên máy</div>
+      <span class="io"><b>soạn mới</b> · 2026-08-21 · bài tập: 04-bien-doi-du-lieu/bai-tap/</span>
+    </a>
+  </div>
+</section>
+
+<section class="grp" style="--gc:var(--c4)">
+  <div class="ghead"><span class="gnum">05</span><span class="gname">Điều phối</span></div>
+  <p class="gsub">Xuyên suốt — nhạc trưởng của toàn bộ đường ống.</p>
+  <div class="items">
+    <a class="item" href="05-dieu-phoi/airflow-ui-huong-dan.html">
+      <div class="it">Hướng dẫn giao diện Airflow</div>
+      <div class="id">Đọc hiểu từng màn hình trong Airflow UI · file sinh tự động bởi <code>build_guide.py</code></div>
+      <span class="io"><b>gốc:</b> Apache Spark/airflow_ui_guide/huong_dan_airflow_ui.html</span>
+    </a>
+    <a class="item" href="05-dieu-phoi/mo-xe-mot-file-dag.html">
+      <div class="it">Mổ xẻ một file DAG</div>
+      <div class="id">Đọc một DAG thật theo từng phần, hiểu vì sao viết như vậy</div>
+      <span class="io"><b>gốc:</b> ShopVN/huong-dan-doc-dag.html</span>
+    </a>
+  </div>
+</section>
+
+<section class="grp" style="--gc:var(--c5)">
+  <div class="ghead"><span class="gnum">06</span><span class="gname">Vận hành &amp; triển khai</span></div>
+  <p class="gsub">Xuyên suốt — đưa pipeline ra chạy thật và giữ nó sống.</p>
+  <div class="items">
+    <a class="item" href="06-van-hanh-trien-khai/gitlab-cicd-deploy-airflow.html">
+      <div class="it">CI/CD deploy Airflow từ GitLab</div>
+      <div class="id">Nghiên cứu pipeline triển khai tự động cho Airflow</div>
+      <span class="io"><b>gốc:</b> ShopVN/research_gitlab_cicd_airflow.html</span>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <p><b>Đây là bản sao.</b> Bản gốc vẫn nằm nguyên trong từng project — sửa bản gốc thì bản ở đây không tự cập nhật theo.</p>
+  <p><b>Lưu ý riêng file Airflow UI:</b> nó do <code>build_guide.py</code> sinh ra. Muốn sửa nội dung thì sửa script rồi chạy lại, đừng sửa tay file HTML.</p>
+  <p><b>Không gom vào đây:</b> thư mục <code>de-lab/</code> (lab đang làm việc, để nguyên tại chỗ) và <code>dbt + BigQuery/target/index.html</code> (tài liệu dbt sinh tự động, không phải bài giảng).</p>
+</footer>
+
+</div>
+</body>
+</html>

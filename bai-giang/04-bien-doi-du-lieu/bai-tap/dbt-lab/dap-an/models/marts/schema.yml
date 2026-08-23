@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: stg_khach_hang
+    description: "Khách hàng đã khử trùng và làm sạch"
+    columns:
+      - name: ma_kh
+        description: "Khoá tự nhiên"
+        data_tests: [unique, not_null]
+      - name: hang_thanh_vien
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['bac', 'vang', 'kim_cuong']
+      - name: ngay_dang_ky
+        data_tests: [not_null]
+
+  - name: stg_don_hang
+    columns:
+      - name: don_id
+        data_tests: [unique, not_null]
+      - name: ma_kh
+        data_tests:
+          - relationships:              # khoá ngoại: mọi đơn phải trỏ về khách có thật
+              arguments:
+                to: ref('stg_khach_hang')
+                field: ma_kh
+
+  - name: fct_doanh_thu_ngay
+    columns:
+      - name: ngay
+        data_tests: [unique, not_null]
+      - name: doanh_thu
+        data_tests: [not_null]
+
+  - name: dim_khach_hang
+    columns:
+      - name: ma_kh
+        data_tests: [unique, not_null]

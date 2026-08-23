@@ -1,0 +1,510 @@
+<title>Trình giả lập pipeline CDC · Kafka Connect × Redpanda Connect</title>
+<style>
+  :root {
+    --bg: #eaeff1; --surface: #ffffff; --surface-2: #f4f8f9; --ink: #0e1a20;
+    --ink-soft: #3d545f; --muted: #6c8592; --border: #d5e0e4; --border-strong: #bccbd1;
+    --flow: #0a94a6; --flow-bright: #0aa9bd; --flow-wash: #dcf0f2;
+    --change: #c96a24; --change-bright: #d9782f; --change-wash: #f6e6d7;
+    --code-bg: #0c171d; --code-ink: #cfe0e4;
+    --good: #1a8f5a; --good-wash: #d9f0e4; --bad: #c23b45; --bad-wash: #f7e0e2;
+    --ship: #2f6fb0; --ship-wash: #dde8f5;
+    --shadow: 0 1px 2px rgba(14,26,32,.05), 0 8px 24px -12px rgba(14,26,32,.18);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1216; --surface: #101d23; --surface-2: #0d181e; --ink: #dbe7ea;
+      --ink-soft: #9cb1ba; --muted: #6e8791; --border: #21333b; --border-strong: #2c4149;
+      --flow: #34d3e6; --flow-bright: #4fdcec; --flow-wash: #0f2a30;
+      --change: #f0a25a; --change-bright: #f4b072; --change-wash: #2c1e12;
+      --code-bg: #060d11; --code-ink: #cfe0e4;
+      --good: #43c78a; --good-wash: #10261c; --bad: #f0737f; --bad-wash: #2a1315;
+      --ship: #6fa8dc; --ship-wash: #12202e;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a1216; --surface: #101d23; --surface-2: #0d181e; --ink: #dbe7ea;
+    --ink-soft: #9cb1ba; --muted: #6e8791; --border: #21333b; --border-strong: #2c4149;
+    --flow: #34d3e6; --flow-bright: #4fdcec; --flow-wash: #0f2a30;
+    --change: #f0a25a; --change-bright: #f4b072; --change-wash: #2c1e12;
+    --code-bg: #060d11; --code-ink: #cfe0e4;
+    --good: #43c78a; --good-wash: #10261c; --bad: #f0737f; --bad-wash: #2a1315;
+    --ship: #6fa8dc; --ship-wash: #12202e;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"] {
+    --bg: #eaeff1; --surface: #ffffff; --surface-2: #f4f8f9; --ink: #0e1a20;
+    --ink-soft: #3d545f; --muted: #6c8592; --border: #d5e0e4; --border-strong: #bccbd1;
+    --flow: #0a94a6; --flow-bright: #0aa9bd; --flow-wash: #dcf0f2;
+    --change: #c96a24; --change-bright: #d9782f; --change-wash: #f6e6d7;
+    --code-bg: #0c171d; --code-ink: #cfe0e4;
+    --good: #1a8f5a; --good-wash: #d9f0e4; --bad: #c23b45; --bad-wash: #f7e0e2;
+    --ship: #2f6fb0; --ship-wash: #dde8f5;
+    --shadow: 0 1px 2px rgba(14,26,32,.05), 0 8px 24px -12px rgba(14,26,32,.18);
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 20px 60px; }
+  h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+  .sub { color: var(--ink-soft); font-size: .95rem; margin: 6px 0 0; max-width: 760px; }
+  .eyebrow { font-family: var(--mono); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--flow); font-weight: 600; }
+  .mono { font-family: var(--mono); }
+
+  /* ---------- pipeline bar ---------- */
+  .pipewrap { overflow-x: auto; margin: 20px -4px 0; padding: 6px 4px 4px; }
+  .pipe { display: flex; align-items: stretch; min-width: 860px; }
+  .node {
+    flex: 1 1 0; min-width: 138px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 13px; position: relative; transition: box-shadow .2s, border-color .2s, transform .2s;
+  }
+  .node.change { border-color: color-mix(in srgb, var(--change) 45%, var(--border)); }
+  .node.flow { border-color: color-mix(in srgb, var(--flow) 40%, var(--border)); }
+  .node.lit { box-shadow: 0 0 0 2px var(--flow), var(--shadow); transform: translateY(-2px); }
+  .node.change.lit { box-shadow: 0 0 0 2px var(--change), var(--shadow); }
+  .node .kind { font-family: var(--mono); font-size: .58rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .node .nm { font-weight: 750; font-size: .92rem; margin: 4px 0 3px; letter-spacing: -.01em; }
+  .node .ct { font-family: var(--mono); font-size: .72rem; color: var(--ink-soft); }
+  .node .ct b { color: var(--flow); font-size: .95rem; }
+  .conn { flex: 0 0 40px; align-self: center; height: 3px; background: var(--border-strong); border-radius: 3px; position: relative; overflow: visible; }
+  .conn .pk { position: absolute; top: 50%; left: 0; width: 8px; height: 8px; margin-top: -4px; border-radius: 50%; background: var(--flow-bright); color: var(--flow); opacity: 0; }
+  .conn.change .pk { background: var(--change-bright); color: var(--change); }
+  .conn.on .pk { animation: travel .5s ease-in-out; box-shadow: 0 0 8px 1px currentColor; }
+  @keyframes travel { 0%{opacity:1;left:0} 100%{opacity:1;left:calc(100% - 8px)} }
+
+  .narr {
+    margin-top: 14px; background: var(--code-bg); color: var(--code-ink); border-radius: 10px;
+    padding: 12px 16px; font-family: var(--mono); font-size: .82rem; min-height: 44px;
+    display: flex; align-items: center; gap: 10px; box-shadow: var(--shadow);
+  }
+  .narr .stepno { flex: none; width: 22px; height: 22px; border-radius: 6px; background: var(--flow); color: #04181c; display: grid; place-items: center; font-weight: 700; font-size: .75rem; }
+  .narr.idle { color: var(--muted); }
+  .narr.drop .stepno { background: var(--bad); color: #fff; }
+
+  /* ---------- grid ---------- */
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1.05fr; gap: 16px; margin-top: 18px; align-items: start; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; box-shadow: var(--shadow); }
+  .panel > h2 { font-size: .78rem; font-family: var(--mono); letter-spacing: .1em; text-transform: uppercase; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+  .panel .hint { font-size: .78rem; color: var(--muted); margin: 0 0 12px; }
+  .tag { font-family: var(--mono); font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; padding: 2px 7px; border-radius: 5px; }
+  .tag.change { background: var(--change-wash); color: var(--change); }
+  .tag.flow { background: var(--flow-wash); color: var(--flow); }
+
+  label.fld { display: block; font-size: .72rem; color: var(--muted); font-family: var(--mono); letter-spacing: .04em; margin-bottom: 3px; text-transform: uppercase; }
+  input[type=text], input[type=number], select {
+    width: 100%; padding: 7px 9px; border: 1px solid var(--border-strong); border-radius: 8px;
+    background: var(--surface-2); color: var(--ink); font-family: var(--sans); font-size: .88rem;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mb { margin-bottom: 9px; }
+  button { font-family: var(--sans); cursor: pointer; border-radius: 8px; border: 1px solid transparent; font-weight: 600; }
+  .btn-primary { width: 100%; padding: 9px; background: var(--change); color: #fff; font-size: .9rem; margin-top: 4px; }
+  .btn-primary:hover { background: var(--change-bright); }
+  .btn-ghost { padding: 5px 9px; font-size: .76rem; background: var(--surface-2); border-color: var(--border-strong); color: var(--ink-soft); }
+  .btn-ghost:hover { border-color: var(--flow); color: var(--flow); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: .82rem; }
+  th { text-align: left; font-family: var(--mono); font-size: .62rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+  td { padding: 5px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  tr.flash td { animation: flash 1s ease; }
+  @keyframes flash { from { background: var(--change-wash); } to { background: transparent; } }
+  .pill { font-family: var(--mono); font-size: .64rem; font-weight: 700; padding: 2px 7px; border-radius: 999px; letter-spacing: .03em; }
+  .pill.NEW { background: var(--change-wash); color: var(--change); }
+  .pill.PAID { background: var(--good-wash); color: var(--good); }
+  .pill.SHIPPED { background: var(--ship-wash); color: var(--ship); }
+  .pill.CANCELLED { background: var(--bad-wash); color: var(--bad); }
+  select.st { padding: 3px 5px; font-size: .72rem; font-family: var(--mono); width: auto; }
+  .xbtn { background: transparent; border: none; color: var(--bad); font-size: 1rem; padding: 0 4px; line-height: 1; }
+  .xbtn:hover { transform: scale(1.2); }
+
+  .toggle { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--border); }
+  .toggle:last-of-type { border-bottom: none; }
+  .toggle input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--flow); flex: none; }
+  .toggle .lab { font-size: .84rem; }
+  .toggle .lab code { font-family: var(--mono); font-size: .78rem; background: var(--flow-wash); color: var(--flow); padding: .05em .35em; border-radius: 4px; }
+  .toggle .lab .d { color: var(--muted); font-size: .76rem; display: block; margin-top: 1px; }
+
+  pre.yaml { background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-family: var(--mono); font-size: .72rem; line-height: 1.5; margin: 12px 0 0; max-height: 260px; }
+  pre.yaml .k { color: var(--flow-bright); }
+  pre.yaml .s { color: var(--change-bright); }
+  pre.yaml .c { color: var(--muted); }
+  pre.yaml .add { color: var(--good); }
+
+  .log { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; max-height: 210px; overflow-y: auto; }
+  .ev { border-radius: 8px; padding: 7px 9px; font-family: var(--mono); font-size: .7rem; line-height: 1.45; border: 1px solid var(--border); background: var(--surface-2); word-break: break-word; }
+  .ev.raw { color: var(--ink-soft); }
+  .ev.clean { border-color: color-mix(in srgb, var(--flow) 35%, var(--border)); }
+  .ev.dropped { border-style: dashed; opacity: .7; color: var(--muted); }
+  .ev .op { font-weight: 700; padding: 0 5px; border-radius: 4px; margin-right: 5px; }
+  .ev .op.c { background: var(--good-wash); color: var(--good); }
+  .ev .op.u { background: var(--ship-wash); color: var(--ship); }
+  .ev .op.d { background: var(--bad-wash); color: var(--bad); }
+  .ev .op.r { background: var(--surface); color: var(--muted); }
+  .ev.new-in { animation: slidein .45s ease; }
+  @keyframes slidein { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  .subhead { font-family: var(--mono); font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 12px 0 0; display: flex; justify-content: space-between; }
+  .subhead:first-child { margin-top: 0; }
+
+  .toprow { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+  :focus-visible { outline: 2px solid var(--flow); outline-offset: 2px; }
+
+  @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { .conn.on .pk, tr.flash td, .ev.new-in { animation: none; } .node.lit { transform: none; } }
+</style>
+
+<div class="wrap">
+  <h1 class="sr-only">Trình giả lập pipeline CDC</h1>
+  <div class="toprow">
+    <div>
+      <p class="eyebrow">Trình giả lập · Postgres → Debezium → Kafka → Redpanda Connect</p>
+      <h1>Bạn điều khiển pipeline</h1>
+      <p class="sub">Bấm một hành động lên database Postgres (bên trái). Xem dữ liệu chảy qua từng chặng, và chỉnh cấu hình Redpanda Connect (giữa) để thấy đầu ra sạch (phải) đổi theo. Không có gì thật ở đây — mọi thứ chạy trong trình duyệt để bạn thử thoải mái.</p>
+    </div>
+    <button class="btn-ghost" id="reset" style="flex:none">↺ Reset về ban đầu</button>
+  </div>
+
+  <!-- PIPELINE BAR -->
+  <div class="pipewrap">
+    <div class="pipe">
+      <div class="node change" id="n0"><div class="kind">Database nguồn</div><div class="nm">PostgreSQL</div><div class="ct"><b id="c-orders">2</b> dòng trong bảng</div></div>
+      <div class="conn change" id="cn0"><span class="pk"></span></div>
+      <div class="node flow" id="n1"><div class="kind">Kafka Connect</div><div class="nm">Debezium (CDC)</div><div class="ct">đọc WAL</div></div>
+      <div class="conn" id="cn1"><span class="pk"></span></div>
+      <div class="node flow" id="n2"><div class="kind">Kafka topic · thô</div><div class="nm">shopdb.public.orders</div><div class="ct"><b id="c-raw">2</b> message</div></div>
+      <div class="conn" id="cn2"><span class="pk"></span></div>
+      <div class="node flow" id="n3"><div class="kind">Stream processing</div><div class="nm">Redpanda Connect</div><div class="ct">Bloblang</div></div>
+      <div class="conn" id="cn3"><span class="pk"></span></div>
+      <div class="node flow" id="n4"><div class="kind">Kafka topic · sạch</div><div class="nm" id="nm-clean">orders.clean</div><div class="ct"><b id="c-clean">2</b> message</div></div>
+    </div>
+  </div>
+  <div class="narr idle" id="narr"><span class="stepno">i</span><span id="narr-txt">Chưa có gì chảy. Hãy bấm một hành động ở cột "Bạn điều khiển".</span></div>
+
+  <div class="grid">
+    <!-- POSTGRES CONTROL -->
+    <div class="panel">
+      <h2><span class="tag change">Bạn điều khiển</span> Postgres</h2>
+      <p class="hint">Thêm / sửa / xoá đơn hàng — như ứng dụng thật ghi vào DB.</p>
+      <div class="mb">
+        <label class="fld" for="in-cust">Khách</label>
+        <div class="row2">
+          <input type="text" id="in-cust" value="KH10">
+          <input type="text" id="in-prod" value="Áo khoác" aria-label="Sản phẩm">
+        </div>
+      </div>
+      <div class="mb">
+        <label class="fld" for="in-amt">Số tiền (đ)</label>
+        <input type="number" id="in-amt" value="300000" step="10000" min="0">
+      </div>
+      <button class="btn-primary" id="btn-insert">+ INSERT đơn mới</button>
+      <table>
+        <thead><tr><th>ID</th><th>Khách</th><th>SP</th><th class="num">Tiền</th><th>Trạng thái</th><th></th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- REDPANDA CONFIG -->
+    <div class="panel">
+      <h2><span class="tag flow">Cấu hình</span> Redpanda Connect</h2>
+      <p class="hint">Bật/tắt để đổi cách biến đổi. Chỉ áp cho event <b>mới</b> (giống thật — dữ liệu cũ không đổi).</p>
+      <div class="toggle">
+        <input type="checkbox" id="cfg-tienngan">
+        <label class="lab" for="cfg-tienngan">Thêm trường <code>tien_ngan</code><span class="d">= tien / 1000 (đơn vị nghìn đồng)</span></label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="cfg-ispaid">
+        <label class="lab" for="cfg-ispaid">Thêm trường <code>is_paid</code><span class="d">= (trang_thai == "PAID")</span></label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="cfg-filter">
+        <label class="lab" for="cfg-filter">Lọc: chỉ giữ đơn <code>PAID</code><span class="d">event khác PAID sẽ bị bỏ, không ghi ra topic sạch</span></label>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="cfg-topic-on" style="visibility:hidden">
+        <label class="lab" for="cfg-topicname" style="width:100%">Topic đích
+          <input type="text" id="cfg-topicname" value="orders.clean" style="margin-top:4px">
+        </label>
+      </div>
+      <div class="subhead"><span>connect.yaml (tự cập nhật)</span></div>
+      <pre class="yaml" id="yaml"></pre>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="panel">
+      <h2><span class="tag flow">Đầu ra</span> Hai topic</h2>
+      <p class="hint">So sánh cùng một hành động: bản thô đồ sộ vs bản sạch gọn gàng.</p>
+      <div class="subhead"><span>▸ shopdb.public.orders <span style="color:var(--change)">(THÔ)</span></span><span id="raw-len"></span></div>
+      <div class="log" id="log-raw"></div>
+      <div class="subhead"><span>▸ <span id="clean-name">orders.clean</span> <span style="color:var(--flow)">(SẠCH)</span></span><span id="clean-len"></span></div>
+      <div class="log" id="log-clean"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var OP_LABEL = { c: "them_moi", u: "cap_nhat", d: "xoa", r: "co_san" };
+  var STATUSES = ["NEW", "PAID", "SHIPPED", "CANCELLED"];
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var state, lsn, timers = [];
+  function seed() {
+    state = {
+      orders: [
+        { id: 1, customer: "KH01", product: "Áo thun", amount: 150000, status: "NEW" },
+        { id: 2, customer: "KH02", product: "Giày sneaker", amount: 550000, status: "NEW" }
+      ],
+      nextId: 3,
+      raw: [
+        mkRaw("r", null, { id: 1, customer: "KH01", product: "Áo thun", amount: 150000, status: "NEW" }),
+        mkRaw("r", null, { id: 2, customer: "KH02", product: "Giày sneaker", amount: 550000, status: "NEW" })
+      ],
+      clean: []
+    };
+    // dựng sẵn 2 clean từ 2 raw snapshot
+    state.clean = state.raw.map(function (r) { return buildClean(r); });
+    lsn = 26643300;
+  }
+  function cfg() {
+    return {
+      tienngan: document.getElementById("cfg-tienngan").checked,
+      ispaid: document.getElementById("cfg-ispaid").checked,
+      filter: document.getElementById("cfg-filter").checked,
+      topic: (document.getElementById("cfg-topicname").value || "orders.clean").trim()
+    };
+  }
+  function mkRaw(op, before, after) {
+    lsn = (lsn || 26643300) + 56;
+    return {
+      before: before, after: after,
+      source: { version: "2.7.4.Final", connector: "postgresql", name: "shopdb", db: "shop", schema: "public", table: "orders", lsn: lsn, ts_ms: Date.now() },
+      op: op, ts_ms: Date.now()
+    };
+  }
+  function buildClean(raw) {
+    var c = cfg();
+    var a = raw.after, b = raw.before;
+    function pick(f) { return (a && a[f] != null) ? a[f] : (b ? b[f] : null); }
+    var data = {
+      order_id: pick("id"), khach: pick("customer"), san_pham: pick("product"),
+      tien: pick("amount"), trang_thai: pick("status"), thao_tac: OP_LABEL[raw.op] || raw.op
+    };
+    if (c.tienngan) data.tien_ngan = data.tien / 1000;
+    if (c.ispaid) data.is_paid = data.trang_thai === "PAID";
+    if (c.filter && data.trang_thai !== "PAID") return { ok: false, reason: 'bị lọc: trang_thai = "' + data.trang_thai + '" ≠ PAID', op: raw.op, id: data.order_id };
+    return { ok: true, data: data, op: raw.op, topic: c.topic };
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (m) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[m]; }); }
+  function vnd(n) { return Number(n).toLocaleString("vi-VN"); }
+
+  // ---------- renderers ----------
+  function renderOrders(flashId) {
+    var tb = document.getElementById("tbody");
+    tb.innerHTML = "";
+    state.orders.forEach(function (o) {
+      var tr = document.createElement("tr");
+      if (o.id === flashId) tr.className = "flash";
+      var opts = STATUSES.map(function (s) { return '<option' + (s === o.status ? " selected" : "") + ">" + s + "</option>"; }).join("");
+      tr.innerHTML =
+        '<td class="num">' + o.id + '</td>' +
+        '<td>' + esc(o.customer) + '</td>' +
+        '<td>' + esc(o.product) + '</td>' +
+        '<td class="num">' + vnd(o.amount) + '</td>' +
+        '<td><select class="st" data-id="' + o.id + '">' + opts + '</select></td>' +
+        '<td><button class="xbtn" data-del="' + o.id + '" title="DELETE">✕</button></td>';
+      tb.appendChild(tr);
+    });
+    document.getElementById("c-orders").textContent = state.orders.length;
+  }
+  function renderRaw(newFlag) {
+    var box = document.getElementById("log-raw");
+    box.innerHTML = "";
+    state.raw.slice(0, 6).forEach(function (r, i) {
+      var d = document.createElement("div");
+      d.className = "ev raw" + (i === 0 && newFlag ? " new-in" : "");
+      d.innerHTML = '<span class="op ' + r.op + '">' + r.op + '</span>' + esc(JSON.stringify(r));
+      box.appendChild(d);
+    });
+    document.getElementById("c-raw").textContent = state.raw.length;
+    var last = state.raw[0];
+    document.getElementById("raw-len").textContent = last ? JSON.stringify(last).length + " ký tự" : "";
+  }
+  function renderClean(newFlag) {
+    var box = document.getElementById("log-clean");
+    box.innerHTML = "";
+    state.clean.slice(0, 6).forEach(function (c, i) {
+      var d = document.createElement("div");
+      var nw = (i === 0 && newFlag) ? " new-in" : "";
+      if (c.ok) {
+        d.className = "ev clean" + nw;
+        d.innerHTML = '<span class="op ' + c.op + '">' + c.op + '</span>' + esc(JSON.stringify(c.data));
+      } else {
+        d.className = "ev dropped" + nw;
+        d.innerHTML = '<span class="op ' + c.op + '">' + c.op + '</span>⨯ đơn #' + c.id + " — " + esc(c.reason);
+      }
+      box.appendChild(d);
+    });
+    var okCount = state.clean.filter(function (c) { return c.ok; }).length;
+    document.getElementById("c-clean").textContent = okCount;
+    var lastOk = state.clean.find(function (c) { return c.ok; });
+    document.getElementById("clean-len").textContent = lastOk ? JSON.stringify(lastOk.data).length + " ký tự" : "";
+  }
+  function renderYaml() {
+    var c = cfg();
+    var extra = "";
+    if (c.tienngan) extra += '\n          <span class="add">"tien_ngan":  this.after.amount / 1000,</span>';
+    if (c.ispaid) extra += '\n          <span class="add">"is_paid":    this.after.status == "PAID",</span>';
+    var filter = c.filter
+      ? '\n    <span class="c"># lọc: chỉ giữ đơn PAID</span>\n    - <span class="k">mapping</span>: \'root = if this.trang_thai != <span class="s">"PAID"</span> { deleted() }\''
+      : "";
+    var y =
+'<span class="k">input</span>:\n' +
+'  <span class="k">redpanda</span>:\n' +
+'    <span class="k">topics</span>: [ <span class="s">"shopdb.public.orders"</span> ]\n\n' +
+'<span class="k">pipeline</span>:\n' +
+'  <span class="k">processors</span>:\n' +
+'    <span class="c"># bỏ tombstone (message rỗng sau DELETE)</span>\n' +
+'    - <span class="k">mapping</span>: \'root = if content().length() == 0 { deleted() }\'\n' +
+'    - <span class="k">mapping</span>: |\n' +
+'        root = {\n' +
+'          <span class="s">"order_id"</span>:   this.after.id | this.before.id,\n' +
+'          <span class="s">"khach"</span>:      this.after.customer | this.before.customer,\n' +
+'          <span class="s">"san_pham"</span>:   this.after.product | this.before.product,\n' +
+'          <span class="s">"tien"</span>:       this.after.amount | this.before.amount,\n' +
+'          <span class="s">"trang_thai"</span>: this.after.status | this.before.status,\n' +
+'          <span class="s">"thao_tac"</span>:   match this.op { <span class="s">"c"</span>=>them_moi ... }' + extra + '\n' +
+'        }' + filter + '\n\n' +
+'<span class="k">output</span>:\n' +
+'  <span class="k">redpanda</span>:\n' +
+'    <span class="k">topic</span>: <span class="s">"' + esc(c.topic) + '"</span>';
+    document.getElementById("yaml").innerHTML = y;
+    document.getElementById("nm-clean").textContent = c.topic;
+    document.getElementById("clean-name").textContent = c.topic;
+  }
+  function renderAll(f) { renderOrders(f && f.order); renderRaw(); renderClean(); renderYaml(); }
+
+  // ---------- flow animation ----------
+  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function lit(id, on) { document.getElementById(id).classList[on ? "add" : "remove"]("lit"); }
+  function connOn(id) { var e = document.getElementById(id); e.classList.remove("on"); void e.offsetWidth; e.classList.add("on"); }
+  function narr(step, txt, drop) {
+    var n = document.getElementById("narr");
+    n.className = "narr" + (drop ? " drop" : "");
+    n.querySelector(".stepno").textContent = step;
+    document.getElementById("narr-txt").textContent = txt;
+  }
+  function setControls(on) {
+    document.getElementById("btn-insert").disabled = !on;
+    Array.prototype.forEach.call(document.querySelectorAll(".st,.xbtn,#reset"), function (b) { b.disabled = !on; });
+  }
+
+  function runFlow(opts) {
+    // opts: {onDb, raw, verbDb, flashId}
+    clearTimers();
+    ["n0", "n1", "n2", "n3", "n4"].forEach(function (i) { lit(i, false); });
+    setControls(false);
+    var raw = opts.raw, op = raw.op;
+    var dt = reduce ? 90 : 480;
+
+    // step 1: Postgres ghi
+    step(0, function () {
+      lit("n0", true);
+      opts.onDb();
+      renderOrders(opts.flashId);
+      narr(1, "Postgres: " + opts.verbDb + " → ghi vào bảng + WAL (nhật ký).");
+    });
+    // step 2: Debezium
+    step(1, function () {
+      lit("n0", false); connOn("cn0"); lit("n1", true);
+      narr(2, "Debezium đọc WAL → tạo event thô op=" + op + " (before/after).");
+    });
+    // step 3: raw topic
+    step(2, function () {
+      lit("n1", false); connOn("cn1"); lit("n2", true);
+      state.raw.unshift(raw); renderRaw(true);
+      narr(3, "Event THÔ vào topic shopdb.public.orders — " + JSON.stringify(raw).length + " ký tự (đủ source, lsn, ts_ms, ts_us, ts_ns...).");
+    });
+    // step 4: redpanda
+    step(3, function () {
+      lit("n2", false); connOn("cn2"); lit("n3", true);
+      var c = cfg(); var msg = "Redpanda Connect: Bloblang giữ 6 trường, dịch op=" + op + " → " + (OP_LABEL[op] || op);
+      if (c.tienngan) msg += ", +tien_ngan";
+      if (c.ispaid) msg += ", +is_paid";
+      narr(4, msg + ".");
+    });
+    // step 5: clean topic / drop
+    step(4, function () {
+      lit("n3", false); connOn("cn3"); lit("n4", true);
+      var clean = buildClean(raw); state.clean.unshift(clean); renderClean(true);
+      if (clean.ok) {
+        var extra = (op === "d") ? " (tombstone rỗng đi kèm đã bị bỏ)" : "";
+        narr(5, "Ghi vào " + clean.topic + " — " + JSON.stringify(clean.data).length + " ký tự." + extra);
+      } else {
+        narr(5, "⨯ KHÔNG ghi: " + clean.reason + ".", true);
+      }
+    });
+    step(5, function () { lit("n4", false); setControls(true); });
+
+    function step(i, fn) { timers.push(setTimeout(fn, i * dt + 30)); }
+  }
+
+  // ---------- actions ----------
+  function insert() {
+    var cust = document.getElementById("in-cust").value.trim() || "KH?";
+    var prod = document.getElementById("in-prod").value.trim() || "SP?";
+    var amt = Number(document.getElementById("in-amt").value) || 0;
+    var row = { id: state.nextId++, customer: cust, product: prod, amount: amt, status: "NEW" };
+    var raw = mkRaw("c", null, Object.assign({}, row));
+    runFlow({ onDb: function () { state.orders.push(row); }, flashId: row.id, raw: raw, verbDb: "INSERT đơn #" + row.id + " (" + cust + ")" });
+  }
+  function update(id, newStatus) {
+    var o = state.orders.find(function (r) { return r.id === id; });
+    if (!o || o.status === newStatus) return;
+    var before = Object.assign({}, o);
+    var raw = mkRaw("u", before, null);
+    runFlow({
+      onDb: function () { o.status = newStatus; raw.after = Object.assign({}, o); },
+      flashId: id, raw: raw,
+      verbDb: "UPDATE #" + id + " status → " + newStatus
+    });
+  }
+  function del(id) {
+    var idx = state.orders.findIndex(function (r) { return r.id === id; });
+    if (idx < 0) return;
+    var before = Object.assign({}, state.orders[idx]);
+    var raw = mkRaw("d", before, null);
+    runFlow({ onDb: function () { state.orders.splice(idx, 1); }, flashId: -1, raw: raw, verbDb: "DELETE #" + id });
+  }
+
+  // ---------- wire up ----------
+  function init() {
+    seed();
+    renderAll();
+    document.getElementById("btn-insert").addEventListener("click", insert);
+    document.getElementById("tbody").addEventListener("change", function (e) {
+      if (e.target.classList.contains("st")) update(Number(e.target.getAttribute("data-id")), e.target.value);
+    });
+    document.getElementById("tbody").addEventListener("click", function (e) {
+      var d = e.target.getAttribute("data-del");
+      if (d) del(Number(d));
+    });
+    ["cfg-tienngan", "cfg-ispaid", "cfg-filter"].forEach(function (id) {
+      document.getElementById(id).addEventListener("change", renderYaml);
+    });
+    document.getElementById("cfg-topicname").addEventListener("input", renderYaml);
+    document.getElementById("reset").addEventListener("click", function () {
+      clearTimers(); seed(); ["n0","n1","n2","n3","n4"].forEach(function(i){lit(i,false);});
+      setControls(true); renderAll();
+      narr("i", "Đã reset. Bấm một hành động để bắt đầu.");
+      document.getElementById("narr").className = "narr idle";
+    });
+  }
+  init();
+})();
+</script>

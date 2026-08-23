@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: nguon
+    description: "Bảng thô do seed.sql dựng ra — coi như dữ liệu vừa đổ về từ hệ thống nguồn"
+    schema: main
+    tables:
+      - name: khach_hang_raw
+        description: "Khách hàng, chưa làm sạch, có bản trùng"
+        # freshness: khai báo ngưỡng cảnh báo độ tươi ngay tại đây
+        loaded_at_field: nhan_luc
+        freshness:
+          warn_after:  {count: 24, period: hour}
+          error_after: {count: 48, period: hour}
+      - name: don_hang
+      - name: chi_tiet_don
+      - name: san_pham
+      - name: khach_hang
+      - name: su_kien_web
+      - name: khach_hang_thay_doi

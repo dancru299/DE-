@@ -1,0 +1,24 @@
+# ============================================================================
+# source() vs ref() -- phân biệt này quan trọng, gặp mỗi ngày ở repo công ty:
+#
+#   source() -> bảng KHÔNG do dbt tạo. Do Kafka Connect / CDC / job khác đổ vào.
+#               dbt chỉ đọc, không bao giờ ghi.
+#   ref()    -> bảng DO dbt tạo ra từ một model khác.
+#               dbt dùng ref() để tự suy ra thứ tự chạy (lineage).
+#
+# Viết thẳng "lake.bookings" vào SQL thì vẫn chạy được -- nhưng dbt sẽ MÙ,
+# không biết model này phụ thuộc vào đâu. Đó là lý do phải khai báo ở đây.
+# ============================================================================
+version: 2
+
+sources:
+  - name: lake
+    description: "Dữ liệu thô đổ từ hệ nguồn vào, append-only (giống output CDC)"
+    schema: lake
+    tables:
+      - name: bookings
+        description: "Đơn đặt phòng. Một đơn bị sửa sẽ sinh DÒNG MỚI, không ghi đè."
+      - name: services
+        description: "Dịch vụ đi kèm đơn: SHUTTLE (đưa đón), SPA, DINING"
+      - name: customers
+        description: "Khách hàng"

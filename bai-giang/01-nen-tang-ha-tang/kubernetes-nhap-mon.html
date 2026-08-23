@@ -1,0 +1,730 @@
+<title>Kubernetes Cho Người Mới</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#ECEFF1;
+  --card:#FAFBFB;
+  --ink:#101A2B;
+  --ink-2:#56637A;
+  --line:#D0D7DE;
+  --accent:#0E7A5F;
+  --accent-soft:rgba(14,122,95,.10);
+  --mark:#AF4436;
+  --mark-soft:rgba(175,68,54,.10);
+  --code-bg:#0E1822;
+  --code-ink:#DDE6EC;
+  --code-line:#1F3040;
+  --code-dim:#7B8EA0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0B1118;
+    --card:#121C26;
+    --ink:#E6ECEF;
+    --ink-2:#8B9AAB;
+    --line:#213040;
+    --accent:#3FCB99;
+    --accent-soft:rgba(63,203,153,.13);
+    --mark:#E8705F;
+    --mark-soft:rgba(232,112,95,.13);
+    --code-bg:#071017;
+    --code-ink:#DDE6EC;
+    --code-line:#1B2A38;
+    --code-dim:#7B8EA0;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0B1118;
+  --card:#121C26;
+  --ink:#E6ECEF;
+  --ink-2:#8B9AAB;
+  --line:#213040;
+  --accent:#3FCB99;
+  --accent-soft:rgba(63,203,153,.13);
+  --mark:#E8705F;
+  --mark-soft:rgba(232,112,95,.13);
+  --code-bg:#071017;
+  --code-ink:#DDE6EC;
+  --code-line:#1B2A38;
+  --code-dim:#7B8EA0;
+}
+
+*{box-sizing:border-box}
+
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+  font-size:17px;
+  line-height:1.72;
+  margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{max-width:960px;margin:0 auto;padding:0 24px 96px}
+
+.serif{
+  font-family:"Source Serif 4",Georgia,"Times New Roman",serif;
+  font-weight:700;
+  letter-spacing:-.012em;
+  text-wrap:balance;
+}
+.mono-lab{
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.7rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  font-weight:500;
+}
+
+/* ---------- hero ---------- */
+.hero{padding:76px 0 42px;position:relative}
+.hero::after{
+  content:"";display:block;height:2px;background:var(--ink);margin-top:38px;
+}
+.hero .mono-lab{color:var(--accent);display:block;margin-bottom:22px}
+.hero h1{
+  font-family:"Source Serif 4",Georgia,serif;
+  font-weight:700;letter-spacing:-.025em;line-height:1;
+  font-size:clamp(2.9rem,9vw,5.2rem);
+  margin:0 0 24px;text-wrap:balance;
+}
+.hero h1 em{font-style:italic;font-weight:600;color:var(--accent)}
+.dek{font-size:clamp(1.05rem,2.3vw,1.26rem);color:var(--ink-2);max-width:60ch;margin:0 0 32px}
+.facts{display:flex;flex-wrap:wrap;gap:12px 30px}
+.fact{display:flex;flex-direction:column;gap:1px}
+.fact span:first-child{
+  font-family:"JetBrains Mono",monospace;font-size:.66rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-2);
+}
+.fact span:last-child{font-weight:600;font-size:.95rem}
+
+/* ---------- sections ---------- */
+.sec{
+  display:grid;grid-template-columns:76px 1fr;gap:0 34px;
+  padding:50px 0;border-bottom:1px solid var(--line);
+}
+.sec:last-of-type{border-bottom:none}
+.num{
+  font-family:"JetBrains Mono",monospace;
+  font-size:.75rem;font-weight:500;letter-spacing:.1em;
+  color:var(--accent);padding-top:.55rem;
+  position:relative;
+}
+.num::after{
+  content:"";position:absolute;left:0;top:2.1rem;bottom:-50px;width:1px;
+  background:linear-gradient(var(--line),transparent);
+}
+.sec h2{
+  font-family:"Source Serif 4",Georgia,serif;
+  font-weight:700;letter-spacing:-.018em;line-height:1.13;
+  font-size:clamp(1.6rem,4vw,2.2rem);
+  margin:0 0 18px;text-wrap:balance;
+}
+.sec h3{
+  font-family:"Source Serif 4",Georgia,serif;
+  font-weight:600;font-size:1.15rem;letter-spacing:-.008em;
+  margin:34px 0 10px;
+}
+.sec p{margin:0 0 16px;max-width:66ch}
+.body-col{min-width:0}
+.body-col > *:first-child{margin-top:0}
+strong{font-weight:600}
+em.q{font-style:italic;color:var(--ink-2)}
+
+@media (max-width:760px){
+  .sec{grid-template-columns:1fr;gap:0}
+  .num{padding-top:0;margin-bottom:12px}
+  .num::after{display:none}
+}
+
+/* ---------- callout ---------- */
+.tip{
+  border-left:3px solid var(--accent);background:var(--accent-soft);
+  padding:16px 20px;margin:24px 0;border-radius:0 3px 3px 0;max-width:66ch;
+}
+.tip .mono-lab{color:var(--accent);display:block;margin-bottom:6px}
+.tip p{margin:0}
+.warn{border-left-color:var(--mark);background:var(--mark-soft)}
+.warn .mono-lab{color:var(--mark)}
+
+/* ---------- code ---------- */
+.code{
+  background:var(--code-bg);color:var(--code-ink);border:1px solid var(--code-line);
+  border-radius:5px;margin:22px 0;overflow:hidden;
+}
+.code-bar{
+  display:flex;align-items:center;gap:9px;padding:9px 14px;
+  border-bottom:1px solid var(--code-line);
+  font-family:"JetBrains Mono",monospace;font-size:.68rem;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--code-dim);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);opacity:.7;flex:none}
+.code pre{
+  margin:0;padding:16px 18px;overflow-x:auto;
+  font-family:"JetBrains Mono",ui-monospace,monospace;
+  font-size:.845rem;line-height:1.72;
+}
+.c{color:var(--code-dim)}
+.k{color:#79C7FF}
+.s{color:#8BD5B0}
+.n{color:#F2B36B}
+
+code:not(pre code){
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.84em;
+  background:var(--accent-soft);color:var(--accent);
+  padding:.12em .38em;border-radius:3px;
+}
+
+/* ---------- table ---------- */
+.table-scroll{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:5px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:540px;font-size:.93rem}
+th{
+  text-align:left;font-family:"JetBrains Mono",monospace;font-size:.65rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2);
+  padding:12px 16px;border-bottom:1px solid var(--line);font-weight:500;
+}
+td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.cmd td:first-child{white-space:nowrap;font-family:"JetBrains Mono",monospace;font-size:.82rem;color:var(--accent)}
+
+/* ---------- cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px;margin:24px 0}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:5px;
+  padding:18px;position:relative;padding-left:20px;
+}
+.card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;background:var(--accent);border-radius:0 2px 2px 0}
+.card h4{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:1.06rem;margin:0 0 3px}
+.card .role{
+  font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-2);display:block;margin-bottom:10px;
+}
+.card p{margin:0;font-size:.92rem;line-height:1.6;color:var(--ink-2)}
+.card p b{color:var(--ink);font-weight:600}
+
+/* ---------- lists ---------- */
+ul.plain{list-style:none;padding:0;margin:18px 0;max-width:66ch;display:flex;flex-direction:column;gap:13px}
+ul.plain li{padding-left:26px;position:relative}
+ul.plain li::before{content:"";position:absolute;left:0;top:.66em;width:10px;height:2px;background:var(--accent)}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;max-width:66ch;display:flex;flex-direction:column;gap:18px;margin:20px 0}
+ol.steps li{counter-increment:s;padding-left:38px;position:relative}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:.1em;width:24px;height:24px;
+  border:1.5px solid var(--accent);color:var(--accent);border-radius:3px;
+  font-family:"JetBrains Mono",monospace;font-size:.74rem;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ---------- figures ---------- */
+figure{margin:28px 0;padding:0}
+.fig-box{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:20px 18px;overflow-x:auto}
+figure svg{width:100%;height:auto;display:block;min-width:440px}
+figcaption{font-size:.82rem;color:var(--ink-2);margin-top:10px}
+svg text{font-family:"Be Vietnam Pro",system-ui,sans-serif}
+svg .t-lab{font-family:"JetBrains Mono",monospace;font-size:8.5px;letter-spacing:.12em;font-weight:500}
+
+/* ---------- closing ---------- */
+.closing{margin-top:56px;background:var(--code-bg);color:var(--code-ink);border-radius:6px;padding:40px 34px}
+.closing h2{font-family:"Source Serif 4",Georgia,serif;font-weight:700;font-size:clamp(1.5rem,4vw,2rem);margin:0 0 8px;color:var(--code-ink)}
+.closing .mono-lab{color:var(--accent);display:block;margin-bottom:16px}
+.closing p{color:var(--code-dim);max-width:62ch;margin:0}
+.recall{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:1px;margin-top:26px;background:var(--code-line)}
+.recall div{background:var(--code-bg);padding:16px 18px}
+.recall b{
+  display:block;font-family:"JetBrains Mono",monospace;color:var(--accent);
+  font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;margin-bottom:7px;font-weight:500;
+}
+.recall span{font-size:.91rem;line-height:1.6;color:var(--code-ink)}
+
+::selection{background:var(--accent);color:var(--paper)}
+a{color:var(--accent)}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="mono-lab">Bài giảng nhập môn · Tiếp nối bài Docker</span>
+  <h1>Kubernetes<br>cho người <em>mới</em></h1>
+  <p class="dek">Docker dạy bạn cách đóng gói một container. Kubernetes trả lời câu hỏi tiếp theo: ai trông chừng chúng lúc 3 giờ sáng khi một máy chủ lăn ra chết?</p>
+  <div class="facts">
+    <div class="fact"><span>Thời lượng</span><span>~25 phút đọc</span></div>
+    <div class="fact"><span>Cần biết trước</span><span>Docker cơ bản</span></div>
+    <div class="fact"><span>Sau bài này</span><span>Deploy 1 app lên cụm K8s</span></div>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="num">01</div>
+  <div class="body-col">
+    <h2>Docker xong rồi, còn thiếu gì?</h2>
+    <p>Bạn đã đóng gói app thành container và chạy được. Trên một máy, cho một app, Docker là đủ. Nhưng đưa lên môi trường thật thì loạt câu hỏi này xuất hiện:</p>
+    <ul class="plain">
+      <li><em class="q">Container chết lúc nửa đêm thì ai bật lại?</em></li>
+      <li><em class="q">Lượng truy cập tăng gấp 10, ai nhân bản thêm cho tôi?</em></li>
+      <li><em class="q">Máy chủ hỏng ổ cứng, ai chuyển đám container sang máy khác?</em></li>
+      <li><em class="q">Muốn cập nhật phiên bản mới mà không được ngắt dịch vụ một giây nào, làm sao?</em></li>
+      <li><em class="q">Ba mươi container nằm rải trên năm máy, chúng tìm nhau kiểu gì?</em></li>
+    </ul>
+    <p>Trả lời tất cả bằng tay là công việc toàn thời gian của một đội người. <strong>Kubernetes chính là đội người đó, dưới dạng phần mềm.</strong></p>
+    <div class="tip">
+      <span class="mono-lab">Tên gọi</span>
+      <p>Kubernetes là tiếng Hy Lạp, nghĩa là <strong>người lái tàu</strong>. Docker lo phần đóng thùng hàng; Kubernetes cầm lái cả đội tàu. Viết tắt <strong>K8s</strong> vì giữa chữ K và chữ s có đúng 8 chữ cái — không có ý nghĩa gì sâu xa hơn.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">02</div>
+  <div class="body-col">
+    <h2>Ý tưởng cốt lõi: bạn khai báo, nó tự lo</h2>
+    <p>Nếu cả bài này bạn chỉ nhớ được một điều, hãy nhớ điều này.</p>
+    <p>Với Docker, bạn <strong>ra lệnh</strong>: "chạy container này lên". Ra lệnh xong là hết trách nhiệm — nó chết thì nó chết.</p>
+    <p>Với Kubernetes, bạn <strong>khai báo mong muốn</strong>: "tôi muốn lúc nào cũng có đúng 3 bản của app này đang chạy". Rồi bạn đi ngủ. Kubernetes liên tục so sánh <strong>trạng thái mong muốn</strong> với <strong>trạng thái thực tế</strong>, và tự sửa cho khớp — mãi mãi, không nghỉ.</p>
+
+    <figure>
+      <div class="fig-box">
+        <svg viewBox="0 0 620 210" role="img" aria-label="Vòng lặp: trạng thái mong muốn, so sánh, trạng thái thực tế, hành động sửa">
+          <g stroke="var(--line)" stroke-width="1.4" fill="var(--paper)">
+            <rect x="14" y="66" width="150" height="62" rx="4"/>
+            <rect x="456" y="66" width="150" height="62" rx="4"/>
+            <rect x="236" y="16" width="148" height="52" rx="4"/>
+            <rect x="236" y="132" width="148" height="52" rx="4"/>
+          </g>
+          <g text-anchor="middle" fill="var(--ink)" font-size="12.5" font-weight="600">
+            <text x="89" y="92">Bạn muốn</text>
+            <text x="561" y="92">Thực tế</text>
+            <text x="310" y="40">So sánh</text>
+            <text x="310" y="156">Hành động</text>
+          </g>
+          <g text-anchor="middle" font-size="11">
+            <text x="89" y="112" fill="var(--accent)" font-weight="600">3 bản đang chạy</text>
+            <text x="561" y="112" fill="var(--mark)" font-weight="600">2 bản đang chạy</text>
+            <text x="310" y="57" fill="var(--ink-2)">lệch 1 bản</text>
+            <text x="310" y="173" fill="var(--ink-2)">tạo thêm 1 bản</text>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.5" fill="none">
+            <path d="M164 88 H206 V42 H228" marker-end="url(#k)"/>
+            <path d="M392 42 H414 V88 H448" marker-end="url(#k)"/>
+            <path d="M561 130 V158 H392" marker-end="url(#k)"/>
+            <path d="M236 158 H89 V132" marker-end="url(#k)"/>
+          </g>
+          <defs>
+            <marker id="k" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M0 0 L7 3.5 L0 7 z" fill="var(--accent)"/>
+            </marker>
+          </defs>
+          <text class="t-lab" x="310" y="200" text-anchor="middle" fill="var(--accent)">LẶP LẠI KHÔNG NGỪNG</text>
+        </svg>
+      </div>
+      <figcaption>Vòng lặp này chạy suốt ngày đêm. Mọi tính năng của K8s đều mọc ra từ đây.</figcaption>
+    </figure>
+
+    <div class="tip">
+      <span class="mono-lab">Mẹo nhớ</span>
+      <p>Kubernetes giống <strong>máy điều hoà</strong>: bạn đặt 25°C rồi thôi. Bạn không tự bật tắt máy nén mỗi khi phòng nóng lên — cái máy tự lo. Bạn khai báo <em>kết quả mong muốn</em>, không khai báo <em>các bước phải làm</em>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">03</div>
+  <div class="body-col">
+    <h2>Bản đồ cụm: Cluster, Node, Pod</h2>
+    <p>Ba tầng, hiểu một lần là xong:</p>
+    <ul class="plain">
+      <li><strong>Cluster</strong> — toàn bộ hệ thống. Gồm một <strong>Control Plane</strong> (bộ não, ra quyết định) và nhiều <strong>Node</strong> (cơ bắp, chạy việc).</li>
+      <li><strong>Node</strong> — một máy chủ, thật hoặc ảo. Đây là nơi container thực sự chạy.</li>
+      <li><strong>Pod</strong> — đơn vị nhỏ nhất K8s quản lý. Một Pod bọc một container (đôi khi vài container dính nhau, dùng chung địa chỉ mạng và ổ đĩa).</li>
+    </ul>
+
+    <figure>
+      <div class="fig-box">
+        <svg viewBox="0 0 620 208" role="img" aria-label="Cấu trúc cụm: control plane và hai node chứa các pod">
+          <rect x="8" y="26" width="604" height="172" rx="5" fill="none" stroke="var(--line)" stroke-width="1.4" stroke-dasharray="4 4"/>
+          <text class="t-lab" x="18" y="20" fill="var(--ink-2)">CLUSTER</text>
+
+          <rect x="26" y="48" width="140" height="132" rx="4" fill="var(--paper)" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="96" y="76" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">Control Plane</text>
+          <g text-anchor="middle" font-size="10.5" fill="var(--ink-2)">
+            <text x="96" y="98">bộ não</text>
+            <text x="96" y="120">nhận khai báo</text>
+            <text x="96" y="138">quyết định đặt Pod</text>
+            <text x="96" y="156">ở đâu</text>
+          </g>
+
+          <g stroke="var(--line)" stroke-width="1.4" fill="var(--paper)">
+            <rect x="212" y="48" width="184" height="132" rx="4"/>
+            <rect x="416" y="48" width="184" height="132" rx="4"/>
+          </g>
+          <g text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--ink)">
+            <text x="304" y="72">Node 1</text>
+            <text x="508" y="72">Node 2</text>
+          </g>
+          <g text-anchor="middle" font-size="10" fill="var(--ink-2)">
+            <text x="304" y="88">một máy chủ</text>
+            <text x="508" y="88">một máy chủ</text>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.3" fill="var(--accent-soft)">
+            <rect x="228" y="102" width="72" height="30" rx="3"/>
+            <rect x="308" y="102" width="72" height="30" rx="3"/>
+            <rect x="228" y="140" width="72" height="30" rx="3"/>
+            <rect x="432" y="102" width="72" height="30" rx="3"/>
+            <rect x="512" y="102" width="72" height="30" rx="3"/>
+            <rect x="432" y="140" width="72" height="30" rx="3"/>
+            <rect x="512" y="140" width="72" height="30" rx="3"/>
+          </g>
+          <g text-anchor="middle" font-size="9.5" fill="var(--accent)" font-weight="600">
+            <text x="264" y="121">Pod</text><text x="344" y="121">Pod</text><text x="264" y="159">Pod</text>
+            <text x="468" y="121">Pod</text><text x="548" y="121">Pod</text><text x="468" y="159">Pod</text><text x="548" y="159">Pod</text>
+          </g>
+          <path d="M166 114 H206" stroke="var(--accent)" stroke-width="1.5" fill="none" marker-end="url(#k2)"/>
+          <defs><marker id="k2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 z" fill="var(--accent)"/></marker></defs>
+        </svg>
+      </div>
+      <figcaption>Bạn nói chuyện với Control Plane. Nó tự chọn Node nào còn chỗ để đặt Pod.</figcaption>
+    </figure>
+
+    <div class="tip">
+      <span class="mono-lab">Mẹo nhớ</span>
+      <p>Đơn vị của Docker là <strong>container</strong>. Đơn vị của Kubernetes là <strong>Pod</strong>. 95% trường hợp một Pod chứa đúng một container — nên tạm thời cứ đọc "Pod" là "container" cũng không sai lệch nhiều.</p>
+    </div>
+
+    <h3>Đối chiếu nhanh với Docker</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Bên Docker</th><th>Bên Kubernetes</th></tr></thead>
+        <tbody>
+          <tr><td>container</td><td>Pod</td></tr>
+          <tr><td>docker run</td><td>Deployment (khai báo trong file YAML)</td></tr>
+          <tr><td>docker-compose.yml</td><td>Một bộ file manifest YAML</td></tr>
+          <tr><td>-p 8080:80</td><td>Service, rồi Ingress</td></tr>
+          <tr><td>-v volume</td><td>PersistentVolumeClaim</td></tr>
+          <tr><td>-e BIEN=giatri</td><td>ConfigMap và Secret</td></tr>
+          <tr><td>docker ps / logs / exec</td><td>kubectl get / logs / exec</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Nhìn bảng này bạn sẽ thấy K8s không phát minh khái niệm mới — nó lấy thứ bạn đã biết rồi làm cho chúng chạy được trên nhiều máy.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">04</div>
+  <div class="body-col">
+    <h2>Bốn thành phần dùng hằng ngày</h2>
+    <p>K8s có hơn 50 loại đối tượng. Người mới cần đúng bốn cái này là làm được việc.</p>
+    <div class="cards">
+      <div class="card">
+        <h4>Pod</h4>
+        <span class="role">Nhân viên</span>
+        <p>Người trực tiếp làm việc. <b>Dùng một lần rồi bỏ</b> — chết là thay người mới, không cứu chữa. Bạn hầu như không tạo Pod bằng tay.</p>
+      </div>
+      <div class="card">
+        <h4>Deployment</h4>
+        <span class="role">Quản lý ca</span>
+        <p>Giữ cho ca lúc nào cũng đủ quân số. Ai nghỉ thì gọi người thay, cần đông thì tuyển thêm, đổi ca thì thay dần từng người. <b>Đây là thứ bạn viết.</b></p>
+      </div>
+      <div class="card">
+        <h4>Service</h4>
+        <span class="role">Tổng đài nội bộ</span>
+        <p>Một địa chỉ cố định để gọi tới nhóm Pod. Nhân viên đổi liên tục nhưng <b>số tổng đài không đổi</b>. Tự chia đều cuộc gọi.</p>
+      </div>
+      <div class="card">
+        <h4>Ingress</h4>
+        <span class="role">Lễ tân ngoài cửa</span>
+        <p>Cửa duy nhất mở ra Internet. Nhìn tên miền và đường dẫn để <b>dẫn khách</b> tới đúng Service bên trong. Kèm luôn HTTPS.</p>
+      </div>
+    </div>
+    <p>Hai cái nữa gặp rất sớm, chỉ cần biết một câu: <strong>ConfigMap</strong> chứa cấu hình dạng chữ, <strong>Secret</strong> chứa mật khẩu và khoá. Cả hai đều để tách cấu hình ra khỏi image, nhờ vậy cùng một image chạy được cho cả môi trường test lẫn thật.</p>
+    <div class="tip warn">
+      <span class="mono-lab">Cảnh báo</span>
+      <p>Secret trong K8s <strong>chỉ được mã hoá Base64, không phải mã hoá thật</strong>. Ai đọc được cụm là đọc được nội dung. Đừng commit file Secret lên Git, và với dữ liệu quan trọng hãy dùng kho khoá chuyên dụng bên ngoài.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">05</div>
+  <div class="body-col">
+    <h2>File YAML đầu tiên</h2>
+    <p>Ở K8s bạn không gõ lệnh dài, bạn viết file mô tả điều mình muốn rồi nộp cho cụm. Đây là một Deployment hoàn chỉnh:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>deployment.yaml</div>
+      <pre><span class="k">apiVersion</span>: apps/v1
+<span class="k">kind</span>: Deployment
+<span class="k">metadata</span>:
+  name: myapp
+<span class="k">spec</span>:
+  replicas: <span class="n">3</span>              <span class="c"># tôi muốn 3 bản</span>
+  selector:
+    matchLabels:
+      app: myapp            <span class="c"># quản ai: ai đeo thẻ này</span>
+  template:                 <span class="c"># khuôn để đúc Pod</span>
+    metadata:
+      labels:
+        app: myapp          <span class="c"># đóng thẻ cho Pod đúc ra</span>
+    spec:
+      containers:
+        - name: myapp
+          image: myapp:<span class="s">1.0</span>
+          ports:
+            - containerPort: <span class="n">3000</span></pre>
+    </div>
+    <p>Đọc từ trên xuống:</p>
+    <ul class="plain">
+      <li><strong>kind</strong> — loại đối tượng bạn muốn tạo. Ở đây là Deployment.</li>
+      <li><strong>replicas</strong> — con số mong muốn. Chính là "25°C" của bạn.</li>
+      <li><strong>selector.matchLabels</strong> — Deployment quản những Pod đeo nhãn <code>app: myapp</code>.</li>
+      <li><strong>template</strong> — khuôn đúc Pod. Mọi thứ dưới đây mô tả <em>một</em> Pod trông thế nào; K8s đúc ra 3 cái giống hệt.</li>
+    </ul>
+    <div class="tip">
+      <span class="mono-lab">Chỗ rối nhất của YAML này</span>
+      <p>Nhãn ở <code>selector</code> và nhãn ở <code>template</code> <strong>phải trùng nhau</strong>. Nhãn là sợi dây duy nhất buộc Deployment với đám Pod của nó — K8s không dùng tên, chỉ dùng nhãn. Gõ lệch một chữ là Deployment đúc Pod ra rồi ngồi nhìn, tưởng chưa có ai.</p>
+    </div>
+    <p>Nộp file lên cụm:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="k">kubectl</span> apply -f deployment.yaml</pre>
+    </div>
+    <p>Lệnh này <strong>chạy bao nhiêu lần cũng an toàn</strong>. Sửa file rồi apply lại, K8s tự tính phần chênh lệch và chỉ thay đổi đúng phần đó.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">06</div>
+  <div class="body-col">
+    <h2>Service: vì sao không gọi thẳng Pod</h2>
+    <p>Pod là thứ dùng rồi bỏ. Mỗi lần sinh ra nó có một địa chỉ IP mới, và nó có thể biến mất bất cứ lúc nào. Ghi cứng IP của Pod vào code thì hôm sau hỏng.</p>
+    <p><strong>Service</strong> là địa chỉ cố định đứng trước một nhóm Pod. Bên trong cụm, các app gọi nhau bằng <strong>tên Service</strong> — hệt như gọi nhau bằng tên trong Docker Compose.</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>service.yaml</div>
+      <pre><span class="k">apiVersion</span>: v1
+<span class="k">kind</span>: Service
+<span class="k">metadata</span>:
+  name: myapp             <span class="c"># app khác gọi: http://myapp</span>
+<span class="k">spec</span>:
+  selector:
+    app: myapp            <span class="c"># gom mọi Pod đeo thẻ này</span>
+  ports:
+    - port: <span class="n">80</span>            <span class="c"># cổng của Service</span>
+      targetPort: <span class="n">3000</span>    <span class="c"># cổng app đang nghe</span></pre>
+    </div>
+    <p>Có ba loại Service, mỗi loại một câu:</p>
+    <ul class="plain">
+      <li><strong>ClusterIP</strong> (mặc định) — chỉ gọi được từ bên trong cụm. Dùng cho database, cho các dịch vụ nội bộ.</li>
+      <li><strong>NodePort</strong> — mở một cổng trên mọi Node. Tiện lúc thử nghiệm, xấu khi chạy thật.</li>
+      <li><strong>LoadBalancer</strong> — nhà cung cấp đám mây cấp cho bạn một IP công khai. Đây là cách ra Internet trên môi trường thật.</li>
+    </ul>
+
+    <figure>
+      <div class="fig-box">
+        <svg viewBox="0 0 620 148" role="img" aria-label="Đường đi của một request: Internet qua Ingress tới Service rồi chia về các Pod">
+          <g stroke="var(--line)" stroke-width="1.4" fill="var(--paper)">
+            <rect x="8" y="52" width="104" height="46" rx="4"/>
+            <rect x="164" y="52" width="104" height="46" rx="4"/>
+            <rect x="320" y="52" width="104" height="46" rx="4"/>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.3" fill="var(--accent-soft)">
+            <rect x="484" y="10" width="120" height="32" rx="3"/>
+            <rect x="484" y="58" width="120" height="32" rx="3"/>
+            <rect x="484" y="106" width="120" height="32" rx="3"/>
+          </g>
+          <g text-anchor="middle" font-size="12" font-weight="600" fill="var(--ink)">
+            <text x="60" y="80">Internet</text>
+            <text x="216" y="74">Ingress</text>
+            <text x="372" y="74">Service</text>
+          </g>
+          <g text-anchor="middle" font-size="9.5" fill="var(--ink-2)">
+            <text x="216" y="89">lễ tân · tên miền</text>
+            <text x="372" y="89">tổng đài · chia tải</text>
+          </g>
+          <g text-anchor="middle" font-size="10" font-weight="600" fill="var(--accent)">
+            <text x="544" y="31">Pod</text><text x="544" y="79">Pod</text><text x="544" y="127">Pod</text>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.5" fill="none">
+            <path d="M112 75 H156" marker-end="url(#k3)"/>
+            <path d="M268 75 H312" marker-end="url(#k3)"/>
+            <path d="M424 75 H452 V26 H476" marker-end="url(#k3)"/>
+            <path d="M452 75 H476" marker-end="url(#k3)"/>
+            <path d="M452 75 V122 H476" marker-end="url(#k3)"/>
+          </g>
+          <defs><marker id="k3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 L7 3.5 L0 7 z" fill="var(--accent)"/></marker></defs>
+        </svg>
+      </div>
+      <figcaption>Một request đi qua đúng chuỗi này. Nhớ được chuỗi là debug được 90% lỗi "không vào được web".</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">07</div>
+  <div class="body-col">
+    <h2>Mười lệnh kubectl sống còn</h2>
+    <p><code>kubectl</code> là cái điều khiển từ xa của cụm. Thuộc bảng này là đủ dùng hằng ngày.</p>
+    <div class="table-scroll">
+      <table class="cmd">
+        <thead><tr><th>Lệnh</th><th>Làm gì</th></tr></thead>
+        <tbody>
+          <tr><td>kubectl get pods</td><td>Liệt kê Pod. Thêm <code>-w</code> để xem thay đổi theo thời gian thực</td></tr>
+          <tr><td>kubectl get all</td><td>Xem mọi thứ đang có trong namespace hiện tại</td></tr>
+          <tr><td>kubectl apply -f</td><td>Nộp file YAML lên cụm — lệnh dùng nhiều nhất</td></tr>
+          <tr><td>kubectl describe pod</td><td>Xem chi tiết và lịch sử sự kiện — <strong>nơi đầu tiên cần nhìn khi lỗi</strong></td></tr>
+          <tr><td>kubectl logs</td><td>Xem log. Thêm <code>-f</code> để theo dõi liên tục</td></tr>
+          <tr><td>kubectl exec -it</td><td>Mở terminal bên trong Pod</td></tr>
+          <tr><td>kubectl scale</td><td>Tăng giảm số bản chạy ngay lập tức</td></tr>
+          <tr><td>kubectl delete -f</td><td>Xoá những gì file YAML đó đã tạo</td></tr>
+          <tr><td>kubectl port-forward</td><td>Mở tạm một cổng từ máy bạn vào Pod để thử</td></tr>
+          <tr><td>kubectl rollout undo</td><td>Quay lại phiên bản trước — nút cứu hộ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <span class="mono-lab">Ba mẹo tiết kiệm thời gian</span>
+      <p>Đặt <code>alias k=kubectl</code> — bạn sẽ gõ nó vài trăm lần một ngày. Dùng <code>kubectl explain deployment.spec</code> để tra cấu trúc YAML mà không cần mở tài liệu. Và khi có lỗi, luôn bắt đầu bằng <code>describe</code> trước khi đọc <code>logs</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">08</div>
+  <div class="body-col">
+    <h2>Dựng cụm trên máy mình</h2>
+    <p>Không cần thuê máy chủ. Chọn một trong ba cách, cách nào cũng chạy được cả bài này:</p>
+    <ul class="plain">
+      <li><strong>Docker Desktop</strong> — vào Settings, bật Kubernetes. Dễ nhất nếu bạn đã cài sẵn Docker.</li>
+      <li><strong>minikube</strong> — công cụ phổ biến nhất để học, có sẵn nhiều tính năng bổ trợ.</li>
+      <li><strong>kind</strong> — dựng cụm bằng chính container Docker. Nhẹ và nhanh nhất.</li>
+    </ul>
+    <p>Chạy trọn vẹn một app từ đầu:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="c"># 1. dựng cụm</span>
+minikube start
+
+<span class="c"># 2. nộp hai file đã viết ở trên</span>
+<span class="k">kubectl</span> apply -f deployment.yaml
+<span class="k">kubectl</span> apply -f service.yaml
+
+<span class="c"># 3. xem đã lên chưa</span>
+<span class="k">kubectl</span> get pods
+<span class="c"># NAME                     READY   STATUS    RESTARTS   AGE</span>
+<span class="c"># myapp-7d4b8c9f5-2xk9p    1/1     Running   0          12s</span>
+<span class="c"># myapp-7d4b8c9f5-8mn3q    1/1     Running   0          12s</span>
+<span class="c"># myapp-7d4b8c9f5-qw7rt    1/1     Running   0          12s</span>
+
+<span class="c"># 4. mở cổng để thử bằng trình duyệt</span>
+<span class="k">kubectl</span> port-forward service/myapp 8080:80</pre>
+    </div>
+    <p>Mở <code>http://localhost:8080</code>. Ba Pod đang chạy, Service đang chia đều lượt truy cập cho cả ba.</p>
+    <div class="tip warn">
+      <span class="mono-lab">Bẫy hay gặp khi học</span>
+      <p>Cụm trên máy bạn <strong>không nhìn thấy image bạn vừa build bằng Docker</strong> — nó có kho image riêng. Với minikube, chạy <code>eval $(minikube docker-env)</code> trước khi build; với kind, dùng <code>kind load docker-image myapp:1.0</code>. Không làm bước này là dính lỗi <code>ErrImagePull</code> ngay.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">09</div>
+  <div class="body-col">
+    <h2>Khoảnh khắc "à, hoá ra là vậy"</h2>
+    <p>Đây là bài thực hành khiến mọi người hiểu Kubernetes ngay lập tức. Xoá thử một Pod đi:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="k">kubectl</span> delete pod myapp-7d4b8c9f5-2xk9p
+<span class="k">kubectl</span> get pods</pre>
+    </div>
+    <p>Vẫn đủ ba Pod. Một cái mới đã được sinh ra trong vài giây, tên khác, tuổi đời mới tinh.</p>
+    <p><strong>Bạn không hề ra lệnh tạo lại.</strong> Bạn đã khai báo "tôi muốn 3", vòng lặp ở phần 02 phát hiện chỉ còn 2, và nó sửa. Đây là toàn bộ Kubernetes, gói trong một thí nghiệm 10 giây.</p>
+
+    <h3>Nhân bản khi tải tăng</h3>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="k">kubectl</span> scale deployment myapp --replicas=<span class="n">10</span></pre>
+    </div>
+    <p>Mười Pod trong vài giây. Đổi lại thành 3 thì bảy cái thừa tự biến mất.</p>
+
+    <h3>Cập nhật không ngắt dịch vụ</h3>
+    <p>Sửa <code>image: myapp:1.0</code> thành <code>myapp:2.0</code> rồi apply lại. Kubernetes thay Pod <strong>từng cái một</strong>: dựng bản mới, chờ nó sẵn sàng, mới tắt bản cũ, rồi sang cái tiếp theo. Người dùng không thấy gián đoạn.</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="k">kubectl</span> rollout status deployment/myapp   <span class="c"># theo dõi tiến trình</span>
+<span class="k">kubectl</span> rollout undo deployment/myapp     <span class="c"># bản mới lỗi? quay về ngay</span></pre>
+    </div>
+    <div class="tip">
+      <span class="mono-lab">Vì sao K8s biết Pod đã sẵn sàng</span>
+      <p>Nhờ <strong>readinessProbe</strong> — một đường dẫn kiểu <code>/health</code> mà K8s gọi thử. Chưa trả lời được thì Service chưa gửi khách vào. Có thêm <strong>livenessProbe</strong>: nếu Pod treo, K8s tự khởi động lại. Thiếu hai thứ này, cập nhật không ngắt dịch vụ chỉ là lý thuyết.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">10</div>
+  <div class="body-col">
+    <h2>Đọc lỗi: năm trạng thái gặp nhiều nhất</h2>
+    <p>Học K8s thực chất là học đọc cột <code>STATUS</code>. Năm dòng này chiếm gần hết số lỗi của người mới:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Trạng thái</th><th>Nghĩa là gì &amp; sửa ra sao</th></tr></thead>
+        <tbody>
+          <tr><td><code>ImagePullBackOff</code></td><td>Không tải được image. Sai tên, sai tag, hoặc kho riêng chưa khai báo thông tin đăng nhập.</td></tr>
+          <tr><td><code>CrashLoopBackOff</code></td><td>Container bật lên rồi chết, lặp mãi. Lỗi nằm trong <strong>app của bạn</strong> — chạy <code>kubectl logs --previous</code> để xem nó chết vì gì.</td></tr>
+          <tr><td><code>Pending</code></td><td>Chưa Node nào nhận. Thường do hết CPU/RAM, hoặc đang chờ ổ đĩa được cấp.</td></tr>
+          <tr><td><code>OOMKilled</code></td><td>Vượt quá giới hạn RAM đã đặt và bị hệ thống giết. Tăng <code>limits</code> hoặc sửa chỗ rò rỉ bộ nhớ.</td></tr>
+          <tr><td><code>Running</code> nhưng <code>0/1</code></td><td>Container sống nhưng readinessProbe chưa qua. App khởi động lâu, hoặc đường dẫn health check sai.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <span class="mono-lab">Quy trình debug ba bước</span>
+      <p><code>kubectl describe pod &lt;tên&gt;</code> và đọc phần <strong>Events</strong> ở cuối — 70% câu trả lời nằm đó. Chưa ra thì <code>kubectl logs &lt;tên&gt;</code>. Vẫn chưa ra thì <code>kubectl exec -it &lt;tên&gt; -- sh</code> chui vào xem tận nơi.</p>
+    </div>
+
+    <h3>Ba thói quen xấu nên tránh từ đầu</h3>
+    <ol class="steps">
+      <li><strong>Dùng tag <code>latest</code>.</strong> Bạn sẽ không bao giờ biết chắc Pod nào đang chạy code nào, và <code>rollout undo</code> mất tác dụng. Luôn đặt số phiên bản rõ ràng.</li>
+      <li><strong>Không đặt <code>resources</code>.</strong> Không khai báo CPU/RAM thì một Pod ngốn tài nguyên có thể kéo sập cả Node. Đặt <code>requests</code> và <code>limits</code> ngay từ file đầu tiên.</li>
+      <li><strong>Tạo Pod trực tiếp.</strong> Pod tạo tay chết là chết luôn, không ai dựng lại. Luôn đi qua Deployment.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="num">11</div>
+  <div class="body-col">
+    <h2>Bài tập về nhà</h2>
+    <p>Đọc mười lần không bằng gõ một lần. Bốn bài này đi hết vòng đời một app trên K8s:</p>
+    <ol class="steps">
+      <li>Dựng cụm bằng minikube hoặc kind. Chạy <code>kubectl get nodes</code> cho tới khi thấy trạng thái <code>Ready</code>.</li>
+      <li>Deploy một app bất kỳ với 3 replicas. Xoá tay một Pod và <strong>quan sát nó tự hồi sinh</strong> bằng <code>kubectl get pods -w</code>.</li>
+      <li>Thêm Service, dùng <code>port-forward</code> để mở được app trên trình duyệt. Sau đó thêm readinessProbe vào Deployment.</li>
+      <li>Cố ý làm hỏng: đổi image thành một tên không tồn tại rồi apply. Đọc <code>describe</code> để tự chẩn đoán, rồi <code>rollout undo</code> để cứu.</li>
+    </ol>
+    <p>Bài số 4 quan trọng nhất. Làm việc với Kubernetes phần lớn thời gian là <strong>đọc trạng thái và tìm hiểu vì sao thực tế chưa khớp mong muốn</strong> — nên tập gỡ lỗi sớm là đầu tư đúng chỗ.</p>
+
+    <h3>Đi tiếp hướng nào</h3>
+    <p>Khi bốn bài trên đã trơn tay, thứ tự học tiếp hợp lý là: <strong>Namespace</strong> để chia tách môi trường, <strong>ConfigMap/Secret</strong> để tách cấu hình, <strong>PersistentVolume</strong> cho dữ liệu cần giữ lại, <strong>Helm</strong> để đóng gói bộ manifest thành cái tái dùng được, rồi <strong>HPA</strong> để cụm tự tăng giảm quy mô theo tải.</p>
+    <div class="tip">
+      <span class="mono-lab">Lời khuyên thật lòng</span>
+      <p>Kubernetes là công cụ cho vấn đề của hệ thống lớn. Nếu app của bạn chạy trên một máy chủ vẫn ổn, <strong>chưa cần K8s vội</strong> — biết là tốt, nhưng dùng đúng lúc mới đáng. Đừng để chi phí vận hành cụm lớn hơn chính vấn đề nó giải quyết.</p>
+    </div>
+  </div>
+</section>
+
+<div class="closing">
+  <span class="mono-lab">Nếu chỉ nhớ được bốn điều</span>
+  <h2>Bản tóm tắt 30 giây</h2>
+  <p>In ra dán cạnh màn hình, ngay dưới tờ tóm tắt Docker. Bốn ô này là bộ khung treo mọi kiến thức K8s về sau.</p>
+  <div class="recall">
+    <div><b>Khai báo, đừng ra lệnh</b><span>Bạn nói muốn gì, K8s liên tục sửa thực tế cho khớp. Giống đặt nhiệt độ điều hoà.</span></div>
+    <div><b>Pod là thứ dùng rồi bỏ</b><span>Không cứu Pod, chỉ thay Pod. Vì vậy luôn đi qua Deployment.</span></div>
+    <div><b>Service là địa chỉ cố định</b><span>IP của Pod đổi liên tục. Gọi nhau bằng tên Service, không bao giờ bằng IP.</span></div>
+    <div><b>Lỗi thì describe trước</b><span>Phần Events cuối lệnh describe chứa phần lớn câu trả lời. Rồi mới tới logs.</span></div>
+  </div>
+</div>
+
+</div>

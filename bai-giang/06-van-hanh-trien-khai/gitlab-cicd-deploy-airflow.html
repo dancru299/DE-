@@ -1,0 +1,309 @@
+<title>Pipeline CI/CD deploy Airflow từ GitLab — Nghiên cứu ShopVN</title>
+<style>
+  :root {
+    --ink:        #1a1d24;
+    --paper:      #f5f3ee;
+    --paper-2:    #ebe7de;
+    --card:       #ffffff;
+    --border:     #d9d3c6;
+    --muted:      #6b6558;
+    --text:       #2a2d34;
+    --accent:     #c8601f;   /* hổ phách nung — cỗ máy giao hàng */
+    --accent-2:   #0f7d78;   /* teal — thế giới Airflow */
+    --good:       #2f8f4e;
+    --bad:        #c0392b;
+    --shadow:     0 1px 2px rgba(26,29,36,.06), 0 8px 24px rgba(26,29,36,.05);
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:      #e9e6df;
+      --paper:    #14161b;
+      --paper-2:  #1b1e25;
+      --card:     #1f232b;
+      --border:   #333844;
+      --muted:    #9a9384;
+      --text:     #d5d2ca;
+      --accent:   #e8853a;
+      --accent-2: #35b3ac;
+      --good:     #52b877;
+      --bad:      #e06a5c;
+      --shadow:   0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"] {
+    --ink:#1a1d24; --paper:#f5f3ee; --paper-2:#ebe7de; --card:#fff; --border:#d9d3c6;
+    --muted:#6b6558; --text:#2a2d34; --accent:#c8601f; --accent-2:#0f7d78;
+    --good:#2f8f4e; --bad:#c0392b; --shadow:0 1px 2px rgba(26,29,36,.06), 0 8px 24px rgba(26,29,36,.05);
+  }
+  :root[data-theme="dark"] {
+    --ink:#e9e6df; --paper:#14161b; --paper-2:#1b1e25; --card:#1f232b; --border:#333844;
+    --muted:#9a9384; --text:#d5d2ca; --accent:#e8853a; --accent-2:#35b3ac;
+    --good:#52b877; --bad:#e06a5c; --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--text);
+    font-family: var(--sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: clamp(1.2rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2rem); }
+
+  /* ---------- header ---------- */
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 1.6rem; margin-bottom: 2.6rem; }
+  .eyebrow {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin: 0 0 .8rem;
+  }
+  h1 {
+    font-family: var(--sans); font-weight: 800; letter-spacing: -.02em;
+    font-size: clamp(1.7rem, 4.5vw, 2.9rem); line-height: 1.08; margin: 0 0 .7rem;
+    color: var(--ink); text-wrap: balance;
+  }
+  .lede { font-size: 1.05rem; color: var(--muted); max-width: 60ch; margin: 0; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.3rem;
+    font-family: var(--mono); font-size: .74rem;
+  }
+  .tag {
+    border: 1px solid var(--border); border-radius: 100px; padding: .28rem .7rem;
+    color: var(--muted); background: var(--card);
+  }
+  .tag.on { border-color: var(--accent); color: var(--accent); }
+
+  section { margin-bottom: 3rem; }
+  h2 {
+    font-size: 1.35rem; font-weight: 750; letter-spacing: -.01em; color: var(--ink);
+    margin: 0 0 .3rem; display: flex; align-items: baseline; gap: .7rem;
+  }
+  h2 .n { font-family: var(--mono); font-size: .8rem; color: var(--accent); font-weight: 600; }
+  .sub { color: var(--muted); margin: 0 0 1.4rem; font-size: .95rem; }
+
+  /* ---------- DAG vs Pipeline split ---------- */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .concept {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.3rem 1.4rem; box-shadow: var(--shadow); position: relative; overflow: hidden;
+  }
+  .concept::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; }
+  .concept.dag::before { background: var(--accent-2); }
+  .concept.pipe::before { background: var(--accent); }
+  .concept .role {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 .5rem;
+  }
+  .concept h3 { margin: 0 0 .1rem; font-size: 1.05rem; color: var(--ink); }
+  .concept .where { font-family: var(--mono); font-size: .8rem; margin-bottom: .7rem; }
+  .concept.dag .where { color: var(--accent-2); }
+  .concept.pipe .where { color: var(--accent); }
+  .concept p { margin: 0; font-size: .9rem; color: var(--text); }
+  .concept code { font-family: var(--mono); font-size: .82em; background: var(--paper-2); padding: .05em .35em; border-radius: 4px; }
+  .note {
+    margin-top: 1rem; font-size: .88rem; color: var(--muted);
+    border-left: 2px solid var(--border); padding-left: .9rem;
+  }
+
+  /* ---------- pipeline flow ---------- */
+  .flow {
+    display: flex; align-items: stretch; gap: 0; overflow-x: auto;
+    padding: .4rem .2rem 1.2rem; margin: 0 -.2rem;
+  }
+  .stage {
+    flex: 0 0 auto; min-width: 130px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 11px; padding: .95rem .9rem; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: .35rem;
+  }
+  .stage .st-lbl { font-family: var(--mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .stage .st-name { font-weight: 700; color: var(--ink); font-size: .96rem; line-height: 1.2; }
+  .stage .st-cmd { font-family: var(--mono); font-size: .7rem; color: var(--accent); word-break: break-word; }
+  .stage.airflow { border-color: var(--accent-2); }
+  .stage.airflow .st-name { color: var(--accent-2); }
+  .arrow { flex: 0 0 auto; align-self: center; color: var(--muted); font-size: 1.1rem; padding: 0 .35rem; }
+  .gate {
+    margin-top: 1rem; background: var(--paper-2); border: 1px dashed var(--border);
+    border-radius: 10px; padding: .9rem 1.1rem; font-size: .88rem;
+  }
+  .gate b.pass { color: var(--good); } .gate b.fail { color: var(--bad); }
+
+  /* ---------- registry callout ---------- */
+  .registry {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.3rem 1.4rem; box-shadow: var(--shadow); margin-top: 1.2rem;
+  }
+  .reg-line {
+    display: flex; align-items: center; gap: .6rem; flex-wrap: wrap;
+    font-family: var(--mono); font-size: .82rem; margin-top: .8rem;
+  }
+  .reg-box { border: 1px solid var(--border); border-radius: 7px; padding: .4rem .7rem; background: var(--paper-2); }
+  .reg-box.hl { border-color: var(--accent); color: var(--accent); }
+  .reg-arr { color: var(--muted); }
+
+  /* ---------- why list ---------- */
+  .why { display: grid; gap: .7rem; }
+  .why .row {
+    display: grid; grid-template-columns: auto 1fr; gap: .9rem;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: .95rem 1.1rem; box-shadow: var(--shadow);
+  }
+  .why .k { font-family: var(--mono); font-weight: 700; color: var(--accent); font-size: .84rem; white-space: nowrap; }
+  .why .v { font-size: .92rem; }
+  .why .v b { color: var(--ink); }
+
+  /* ---------- tables ---------- */
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 11px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; background: var(--card); }
+  th, td { text-align: left; padding: .7rem .95rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--paper-2); }
+  tr:last-child td { border-bottom: none; }
+  td code { font-family: var(--mono); font-size: .82em; background: var(--paper-2); padding: .05em .35em; border-radius: 4px; color: var(--accent); }
+
+  /* ---------- checklist ---------- */
+  .checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: .55rem; }
+  .checklist li {
+    display: flex; gap: .7rem; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--border); border-radius: 9px; padding: .7rem .95rem;
+    font-size: .9rem;
+  }
+  .checklist .box {
+    flex: 0 0 auto; width: 17px; height: 17px; border: 1.5px solid var(--muted); border-radius: 4px; margin-top: .18rem;
+  }
+  .checklist code { font-family: var(--mono); font-size: .82em; color: var(--accent); }
+
+  .callout {
+    border-left: 3px solid var(--accent); background: var(--card);
+    padding: 1rem 1.2rem; border-radius: 0 10px 10px 0; box-shadow: var(--shadow); font-size: .92rem;
+  }
+  .callout b { color: var(--ink); }
+
+  footer { border-top: 1px solid var(--border); margin-top: 3rem; padding-top: 1.3rem; color: var(--muted); font-size: .82rem; font-family: var(--mono); }
+
+  @media (max-width: 640px) {
+    .split { grid-template-columns: 1fr; }
+    .why .row { grid-template-columns: 1fr; gap: .3rem; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Tài liệu nghiên cứu · DataOps</p>
+    <h1>Pipeline CI/CD deploy Airflow từ GitLab</h1>
+    <p class="lede">Cỗ máy đưa một thay đổi DAG đi từ commit trên máy tới lúc Airflow production chạy nó — áp dụng cho stack ShopVN (Airflow 2.10.5 · Postgres · DuckDB · Docker Compose).</p>
+    <div class="meta">
+      <span class="tag on">Tầng 1 · Khái niệm</span>
+      <span class="tag on">Tầng 2 · Pipeline cụ thể</span>
+      <span class="tag">Tầng 3 · Chạy thật — chưa làm (cần tạo repo)</span>
+    </div>
+  </header>
+
+  <!-- 1 -->
+  <section>
+    <h2><span class="n">01</span> Hai khái niệm dễ nhầm: DAG vs Pipeline</h2>
+    <p class="sub">Cả hai đều là "đồ thị có hướng không chu trình", nhưng theo quy ước ngành chúng không gọi chung tên.</p>
+    <div class="split">
+      <div class="concept dag">
+        <p class="role">Hàng được giao</p>
+        <h3>DAG</h3>
+        <p class="where">thuộc Airflow</p>
+        <p>File Python định nghĩa quy trình xử lý dữ liệu — <code>dags/shopvn_pipeline.py</code>: đọc Postgres → transform trong DuckDB → cổng chất lượng.</p>
+      </div>
+      <div class="concept pipe">
+        <p class="role">Cỗ máy giao hàng</p>
+        <h3>Pipeline</h3>
+        <p class="where">thuộc GitLab CI/CD</p>
+        <p>Nội dung file <code>.gitlab-ci.yml</code> — các <b>stage</b> và <b>job</b> lo việc kiểm thử, đóng gói và mang DAG đi deploy.</p>
+      </div>
+    </div>
+    <p class="note">Gọi nội dung <code>.gitlab-ci.yml</code> là "DAG" thì người trong nghề sẽ không hiểu. File yml đó <b>chính là</b> pipeline, chứ không phải "chứa" pipeline bên trong.</p>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <h2><span class="n">02</span> Luồng end-to-end</h2>
+    <p class="sub">Một <code style="font-family:var(--mono)">git push</code> sinh ra một pipeline. GitLab điều phối; <b>Runner</b> mới là máy chạy lệnh thật.</p>
+    <div class="flow">
+      <div class="stage"><span class="st-lbl">Trigger</span><span class="st-name">git push</span><span class="st-cmd">→ GitLab đọc .yml</span></div>
+      <span class="arrow">→</span>
+      <div class="stage"><span class="st-lbl">Stage · lint</span><span class="st-name">Lint</span><span class="st-cmd">ruff check dags/</span></div>
+      <span class="arrow">→</span>
+      <div class="stage"><span class="st-lbl">Stage · test</span><span class="st-name">DAG test</span><span class="st-cmd">dags list-import-errors</span></div>
+      <span class="arrow">→</span>
+      <div class="stage"><span class="st-lbl">Stage · build</span><span class="st-name">Build image</span><span class="st-cmd">docker build</span></div>
+      <span class="arrow">→</span>
+      <div class="stage"><span class="st-lbl">Push</span><span class="st-name">Registry</span><span class="st-cmd">docker push</span></div>
+      <span class="arrow">→</span>
+      <div class="stage"><span class="st-lbl">Stage · deploy</span><span class="st-name">Deploy</span><span class="st-cmd">ssh · compose up -d</span></div>
+      <span class="arrow">→</span>
+      <div class="stage airflow"><span class="st-lbl">Kết quả</span><span class="st-name">Airflow prod</span><span class="st-cmd">scheduler nạp DAG</span></div>
+    </div>
+    <div class="gate">
+      <b>Lưới an toàn số 1 — cổng test:</b> DAG là code Python được scheduler parse liên tục.
+      DAG import <b class="pass">OK</b> → pipeline đi tiếp. DAG import <b class="fail">lỗi</b> → pipeline dừng, code <b>không bao giờ</b> tới được production.
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <h2><span class="n">03</span> "Push image lên đâu?" → Container Registry</h2>
+    <p class="sub">Máy build (Runner) và máy chạy (server production) là hai máy khác nhau — cần một kho trung gian.</p>
+    <div class="registry">
+      <p style="margin:0; font-size:.92rem;">Image được build trong môi trường mà Runner dùng để thực hiện job. Sau khi job kết thúc, môi trường tạm đó thường bị dọn dẹp (đặc biệt với shared runner hoặc Kubernetes runner) — nên nếu không <code style="font-family:var(--mono)">docker push</code> image lên <b>Container Registry</b> thì image sẽ không còn để các máy khác (hoặc production) tải về. Hình dung Registry như "GitHub cho image"; GitLab tặng sẵn mỗi project một cái miễn phí.</p>
+      <div class="reg-line">
+        <span class="reg-box">Runner · build</span>
+        <span class="reg-arr">──push──▶</span>
+        <span class="reg-box hl">Container Registry</span>
+        <span class="reg-arr">──pull──▶</span>
+        <span class="reg-box">Server · chạy</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <h2><span class="n">04</span> Tại sao mỗi bước tồn tại</h2>
+    <p class="sub">Phần cốt lõi để hiểu, không chỉ để làm theo.</p>
+    <div class="why">
+      <div class="row"><span class="k">lint+test trước</span><span class="v">Một DAG lỗi có thể làm hỏng việc parse cả các DAG khác. <b>Chặn code lỗi ngay từ cổng.</b></span></div>
+      <div class="row"><span class="k">build image</span><span class="v">DAG phụ thuộc môi trường (<code style="font-family:var(--mono)">duckdb</code>, extension postgres, module <code style="font-family:var(--mono)">pipeline/</code>). Đóng gói tất cả → chạy ở đâu cũng giống hệt. <b>Hết "works on my machine".</b></span></div>
+      <div class="row"><span class="k">tag = commit</span><span class="v">Tag image bằng mã commit để <b>rollback</b>: lỗi thì trỏ lại tag cũ, quay về trạng thái cũ trong 30 giây.</span></div>
+      <div class="row"><span class="k">deploy manual</span><span class="v"><b>Delivery</b> = người bấm nút deploy (an toàn cho người mới). <b>Deployment</b> = merge vào main là tự động deploy. Chọn bằng một dòng <code style="font-family:var(--mono)">when: manual</code>.</span></div>
+      <div class="row"><span class="k">bí mật</span><span class="v">SSH key & mật khẩu <b>không</b> để trong <code style="font-family:var(--mono)">.gitlab-ci.yml</code> — đặt ở <b>Settings → CI/CD → Variables</b>, Runner nhận qua biến môi trường lúc chạy.</span></div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <h2><span class="n">05</span> Bộ file của nghiên cứu này</h2>
+    <p class="sub">Ba file thật đã soạn trong project, sẵn để anh lead đọc code.</p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>File</th><th>Nội dung</th></tr></thead>
+        <tbody>
+          <tr><td><code>.gitlab-ci.yml</code></td><td>Pipeline hoàn chỉnh: lint → test → build → deploy, comment từng phần.</td></tr>
+          <tr><td><code>docker-compose.prod.yml</code></td><td>Compose bản production: pull image từ registry, tách init / scheduler / webserver.</td></tr>
+          <tr><td><code>RESEARCH_gitlab_cicd_airflow.md</code></td><td>Tài liệu nghiên cứu dạng văn bản (bản đầy đủ của trang này).</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top:1.2rem;">
+      <b>Khác biệt dev vs prod:</b> bản dev dùng <code style="font-family:var(--mono)">build:</code> + <code style="font-family:var(--mono)">command: standalone</code> (gộp mọi process, password random — chỉ để dev). Bản prod <code style="font-family:var(--mono)">pull</code> image từ registry và tách rõ init + scheduler + webserver.
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <h2><span class="n">06</span> Muốn chạy thật thì cần gì</h2>
+    <p class="sub">Tầng 3 — chưa làm theo yêu cầu "đừng tạo repo vội". Checklist cho bước tiếp theo.</p>
+    <ul class="checklist">
+      <li><span class="box"></span><span>Tạo repo GitLab (hoặc mirror repo GitHub hiện tại sang).</span></li>
+      <li><span class="box"></span><span>Có ít nhất <b>1 GitLab Runner</b> (GitLab.com có shared runner miễn phí).</span></li>
+      <li><span class="box"></span><span>Bật <b>Container Registry</b> cho project (mặc định đã bật).</span></li>
+      <li><span class="box"></span><span>Khai <b>CI/CD Variables</b>: <code>SSH_PRIVATE_KEY</code> (File), <code>DEPLOY_HOST</code>, <code>DEPLOY_USER</code>, <code>POSTGRES_PASSWORD</code>, <code>AIRFLOW_ADMIN_PASSWORD</code>.</span></li>
+      <li><span class="box"></span><span>Một <b>server production</b> có <code>docker</code> + <code>docker compose</code>, chứa <code>docker-compose.prod.yml</code> + <code>.env</code>.</span></li>
+      <li><span class="box"></span><span>Kiểm tra cú pháp <code>.gitlab-ci.yml</code> bằng công cụ <b>CI Lint</b> của GitLab — không cần chạy pipeline.</span></li>
+    </ul>
+  </section>
+
+  <footer>ShopVN · Nghiên cứu CI/CD Airflow trên GitLab · phạm vi: khái niệm + pipeline cụ thể (không dựng hạ tầng thật)</footer>
+</div>

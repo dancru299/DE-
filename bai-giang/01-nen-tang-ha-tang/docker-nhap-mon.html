@@ -1,0 +1,731 @@
+<title>Docker Cho Người Mới</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#F1F3F1;
+  --card:#FBFCFB;
+  --ink:#12242C;
+  --ink-2:#4C5F65;
+  --line:#D2DAD8;
+  --accent:#C84A18;
+  --accent-soft:rgba(200,74,24,.10);
+  --teal:#2B6B68;
+  --code-bg:#0C2028;
+  --code-ink:#DCE9E6;
+  --code-line:#1E3A44;
+  --code-dim:#7F9AA1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A1418;
+    --card:#111F26;
+    --ink:#E3ECE9;
+    --ink-2:#92A6AB;
+    --line:#20353D;
+    --accent:#FF7A42;
+    --accent-soft:rgba(255,122,66,.13);
+    --teal:#5EA9A1;
+    --code-bg:#07131A;
+    --code-ink:#DCE9E6;
+    --code-line:#1B333C;
+    --code-dim:#7F9AA1;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A1418;
+  --card:#111F26;
+  --ink:#E3ECE9;
+  --ink-2:#92A6AB;
+  --line:#20353D;
+  --accent:#FF7A42;
+  --accent-soft:rgba(255,122,66,.13);
+  --teal:#5EA9A1;
+  --code-bg:#07131A;
+  --code-ink:#DCE9E6;
+  --code-line:#1B333C;
+  --code-dim:#7F9AA1;
+}
+
+*{box-sizing:border-box}
+
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+  font-size:17px;
+  line-height:1.7;
+  margin:0;
+  -webkit-font-smoothing:antialiased;
+}
+
+.wrap{
+  max-width:980px;
+  margin:0 auto;
+  padding:0 24px 96px;
+}
+
+/* ---------- type ---------- */
+.display{
+  font-family:"Archivo","Arial Narrow",system-ui,sans-serif;
+  font-stretch:118%;
+  font-weight:800;
+  letter-spacing:-.015em;
+  text-wrap:balance;
+  line-height:1.05;
+}
+.label{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-stretch:112%;
+  font-weight:700;
+  font-size:.72rem;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+
+/* ---------- hero ---------- */
+.hero{
+  padding:72px 0 40px;
+  border-bottom:3px solid var(--ink);
+}
+.hero .label{color:var(--accent);display:block;margin-bottom:20px}
+.hero h1{
+  font-family:"Archivo","Arial Narrow",system-ui,sans-serif;
+  font-stretch:118%;
+  font-weight:800;
+  letter-spacing:-.02em;
+  line-height:.95;
+  font-size:clamp(2.9rem,9vw,5.4rem);
+  margin:0 0 22px;
+  text-wrap:balance;
+}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.dek{
+  font-size:clamp(1.05rem,2.4vw,1.28rem);
+  color:var(--ink-2);
+  max-width:60ch;
+  margin:0 0 34px;
+}
+.facts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 28px;
+  padding-top:4px;
+}
+.fact{display:flex;flex-direction:column;gap:2px}
+.fact span:first-child{
+  font-family:"Archivo",system-ui,sans-serif;font-stretch:112%;font-weight:700;
+  font-size:.68rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);
+}
+.fact span:last-child{font-weight:600;font-size:.95rem}
+
+/* ---------- sections ---------- */
+.sec{
+  display:grid;
+  grid-template-columns:88px 1fr;
+  gap:0 32px;
+  padding:52px 0;
+  border-bottom:1px solid var(--line);
+}
+.sec:last-of-type{border-bottom:none}
+.num{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-stretch:118%;
+  font-weight:800;
+  font-size:2.5rem;
+  line-height:1;
+  color:transparent;
+  -webkit-text-stroke:1.6px var(--accent);
+  padding-top:4px;
+  font-variant-numeric:tabular-nums;
+}
+.sec h2{
+  font-family:"Archivo","Arial Narrow",system-ui,sans-serif;
+  font-stretch:118%;font-weight:800;letter-spacing:-.015em;line-height:1.1;
+  font-size:clamp(1.55rem,4vw,2.15rem);
+  margin:0 0 18px;
+  text-wrap:balance;
+}
+.sec h3{
+  font-family:"Archivo",system-ui,sans-serif;
+  font-stretch:112%;font-weight:700;
+  font-size:1.05rem;letter-spacing:-.005em;
+  margin:32px 0 10px;
+}
+.sec p{margin:0 0 16px;max-width:66ch}
+.sec > div > *:first-child{margin-top:0}
+strong{font-weight:600;color:var(--ink)}
+.body-col{min-width:0}
+
+@media (max-width:760px){
+  .sec{grid-template-columns:1fr;gap:0}
+  .num{font-size:1.6rem;-webkit-text-stroke:1.2px var(--accent);margin-bottom:10px;padding-top:0}
+}
+
+/* ---------- callout ---------- */
+.tip{
+  border-left:4px solid var(--accent);
+  background:var(--accent-soft);
+  padding:16px 20px;
+  margin:24px 0;
+  border-radius:0 4px 4px 0;
+  max-width:66ch;
+}
+.tip .label{color:var(--accent);display:block;margin-bottom:6px}
+.tip p{margin:0}
+
+/* ---------- code ---------- */
+.code{
+  background:var(--code-bg);
+  color:var(--code-ink);
+  border-radius:6px;
+  margin:22px 0;
+  overflow:hidden;
+  border:1px solid var(--code-line);
+}
+.code-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 14px;
+  border-bottom:1px solid var(--code-line);
+  font-family:"IBM Plex Mono",monospace;
+  font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--code-dim);
+}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--code-line)}
+.code pre{
+  margin:0;padding:16px 18px;
+  overflow-x:auto;
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.855rem;line-height:1.75;
+}
+.c{color:var(--code-dim)}
+.k{color:#FF9A6B}
+.s{color:#7FD1C0}
+
+code:not(pre code){
+  font-family:"IBM Plex Mono",ui-monospace,monospace;
+  font-size:.85em;
+  background:var(--accent-soft);
+  color:var(--accent);
+  padding:.12em .38em;
+  border-radius:3px;
+}
+
+/* ---------- table ---------- */
+.table-scroll{overflow-x:auto;margin:22px 0;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.94rem}
+th{
+  text-align:left;
+  font-family:"Archivo",system-ui,sans-serif;font-stretch:112%;font-weight:700;
+  font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);
+  padding:12px 16px;border-bottom:1px solid var(--line);
+}
+td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{white-space:nowrap;font-family:"IBM Plex Mono",monospace;font-size:.84rem;color:var(--accent)}
+
+/* ---------- cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin:24px 0}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-top:3px solid var(--accent);
+  border-radius:0 0 5px 5px;
+  padding:18px 18px 20px;
+}
+.card h4{
+  font-family:"Archivo",system-ui,sans-serif;font-stretch:114%;font-weight:800;
+  font-size:1.02rem;margin:0 0 4px;
+}
+.card .role{
+  font-family:"Archivo",system-ui,sans-serif;font-stretch:110%;font-weight:700;
+  font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);
+  display:block;margin-bottom:10px;
+}
+.card p{margin:0;font-size:.93rem;line-height:1.62;color:var(--ink-2)}
+.card p b{color:var(--ink);font-weight:600}
+
+/* ---------- list ---------- */
+ul.plain{list-style:none;padding:0;margin:18px 0;max-width:66ch;display:flex;flex-direction:column;gap:14px}
+ul.plain li{padding-left:28px;position:relative}
+ul.plain li::before{
+  content:"";position:absolute;left:0;top:.62em;
+  width:12px;height:2px;background:var(--accent);
+}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;max-width:66ch;display:flex;flex-direction:column;gap:18px;margin:20px 0}
+ol.steps li{counter-increment:s;padding-left:40px;position:relative}
+ol.steps li::before{
+  content:counter(s);position:absolute;left:0;top:0;
+  width:26px;height:26px;border-radius:50%;
+  border:1.5px solid var(--accent);color:var(--accent);
+  font-family:"Archivo",system-ui,sans-serif;font-weight:700;font-size:.8rem;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ---------- figure ---------- */
+figure{margin:28px 0;padding:0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{
+  font-size:.82rem;color:var(--ink-2);margin-top:10px;
+  padding-left:2px;
+}
+.fig-box{
+  background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px 18px;
+  overflow-x:auto;
+}
+svg text{font-family:"Be Vietnam Pro",system-ui,sans-serif}
+svg .t-lab{font-family:"Archivo",system-ui,sans-serif;font-stretch:112%;font-weight:700;font-size:9px;letter-spacing:.1em}
+
+/* ---------- closing ---------- */
+.closing{
+  margin-top:56px;
+  background:var(--code-bg);
+  color:var(--code-ink);
+  border-radius:8px;
+  padding:40px 34px;
+}
+.closing h2{
+  font-family:"Archivo",system-ui,sans-serif;font-stretch:118%;font-weight:800;
+  font-size:clamp(1.5rem,4vw,2rem);margin:0 0 8px;color:var(--code-ink);
+}
+.closing .label{color:var(--accent);display:block;margin-bottom:16px}
+.closing p{color:var(--code-dim);max-width:62ch}
+.recall{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:2px;margin-top:26px;background:var(--code-line)}
+.recall div{background:var(--code-bg);padding:16px 18px}
+.recall b{
+  display:block;font-family:"Archivo",system-ui,sans-serif;font-stretch:112%;font-weight:800;
+  color:var(--accent);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;
+}
+.recall span{font-size:.92rem;line-height:1.6;color:var(--code-ink)}
+
+hr.rule{border:none;border-top:1px solid var(--line);margin:0}
+
+::selection{background:var(--accent);color:#fff}
+a{color:var(--accent)}
+a:focus-visible,*:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media (prefers-reduced-motion:no-preference){
+  .card,.tip{transition:none}
+}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <span class="label">Bài giảng nhập môn · Không cần biết gì trước</span>
+  <h1>Docker cho<br>người <em>mới</em></h1>
+  <p class="dek">Học Docker giống như học lái xe: bạn không cần hiểu động cơ đốt trong, bạn cần biết chỗ cắm chìa khoá. Bài này dạy đúng phần đó — kèm ví dụ gõ được ngay.</p>
+  <div class="facts">
+    <div class="fact"><span>Thời lượng</span><span>~20 phút đọc</span></div>
+    <div class="fact"><span>Cần chuẩn bị</span><span>Docker Desktop + Terminal</span></div>
+    <div class="fact"><span>Sau bài này</span><span>Tự đóng gói &amp; chạy 1 app</span></div>
+  </div>
+</header>
+
+<!-- 01 -->
+<section class="sec">
+  <div class="num">01</div>
+  <div class="body-col">
+    <h2>"Máy tôi chạy được mà!"</h2>
+    <p>Đây là câu nói kinh điển của dân lập trình. App chạy ngon lành trên máy bạn. Gửi cho đồng nghiệp — lỗi. Đẩy lên server — lỗi kiểu khác.</p>
+    <p>Lý do luôn giống nhau: mỗi máy một phiên bản Node/Python khác nhau, một bộ thư viện hệ thống khác nhau, một biến môi trường khác nhau. Code của bạn giống hệt, nhưng <strong>cái nền bên dưới thì không</strong>.</p>
+    <p>Docker giải quyết bằng một ý tưởng rất đơn giản:</p>
+    <div class="tip">
+      <span class="label">Ý tưởng cốt lõi</span>
+      <p>Đóng gói app <strong>cùng với toàn bộ môi trường của nó</strong> vào một khối duy nhất. Đem khối đó chạy ở đâu cũng cho ra kết quả y hệt.</p>
+    </div>
+    <p>Hết. Mọi thứ còn lại trong bài này chỉ là cách làm ra cái khối đó và cách bật nó lên.</p>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="sec">
+  <div class="num">02</div>
+  <div class="body-col">
+    <h2>Vì sao gọi là "container"?</h2>
+    <p>Ngày xưa hàng hoá lên tàu đủ hình dạng: bao gạo, thùng gỗ, kiện vải. Mỗi món phải bốc dỡ một kiểu, mất hàng tuần cho một chuyến tàu.</p>
+    <p>Rồi cả thế giới thống nhất một cỡ <strong>thùng thép tiêu chuẩn</strong>. Cần cẩu nào cũng nhấc được, tàu nào cũng chở được, xe tải nào cũng chở tiếp được — và không ai cần biết bên trong là gạo hay tivi.</p>
+    <p>Docker làm đúng điều đó với phần mềm. Bên trong container là Java, Python hay PHP không quan trọng. Bên ngoài, <strong>mọi container đều có cùng một bộ "tai móc"</strong> để Docker nhấc lên, đặt xuống, chuyển đi máy khác.</p>
+    <p>Bạn học một bộ lệnh, dùng được cho mọi loại app. Đó là toàn bộ giá trị của Docker.</p>
+  </div>
+</section>
+
+<!-- 03 -->
+<section class="sec">
+  <div class="num">03</div>
+  <div class="body-col">
+    <h2>Ba từ khoá bắt buộc phải nhớ</h2>
+    <p>Docker có hàng trăm khái niệm. Người mới chỉ cần đúng ba từ này, phần còn lại suy ra được.</p>
+
+    <div class="cards">
+      <div class="card">
+        <h4>Image</h4>
+        <span class="role">Bản đóng gói · nằm im</span>
+        <p>Một khối chỉ-đọc chứa app + thư viện + hệ điều hành tối giản. Giống <b>file cài đặt</b> hoặc <b>công thức nấu ăn</b>. Nó không chạy, nó chỉ nằm đó.</p>
+      </div>
+      <div class="card">
+        <h4>Container</h4>
+        <span class="role">Bản đang chạy · sống</span>
+        <p>Là một image đã được bật lên. Giống <b>món ăn đã nấu xong</b>. Một image nấu ra được 10 container chạy song song, không đụng nhau.</p>
+      </div>
+      <div class="card">
+        <h4>Registry</h4>
+        <span class="role">Kho chứa · trên mạng</span>
+        <p>Nơi chứa image công khai, mặc định là <b>Docker Hub</b>. Giống siêu thị: bạn <b>pull</b> về dùng, hoặc <b>push</b> đồ của mình lên.</p>
+      </div>
+    </div>
+
+    <div class="tip">
+      <span class="label">Mẹo nhớ</span>
+      <p><strong>Image là danh từ nằm im. Container là động từ đang chạy.</strong> Nhầm hai cái này là nguồn gốc của 80% sự bối rối lúc mới học.</p>
+    </div>
+
+    <figure>
+      <div class="fig-box">
+        <svg viewBox="0 0 640 150" role="img" aria-label="Sơ đồ: Dockerfile qua lệnh build thành Image, qua lệnh run thành nhiều Container">
+          <g fill="none" stroke="var(--line)" stroke-width="1.5">
+            <rect x="8" y="42" width="118" height="58" rx="4" fill="var(--paper)"/>
+            <rect x="212" y="42" width="118" height="58" rx="4" fill="var(--paper)"/>
+            <rect x="424" y="20" width="118" height="34" rx="4" fill="var(--paper)"/>
+            <rect x="424" y="60" width="118" height="34" rx="4" fill="var(--paper)"/>
+            <rect x="424" y="100" width="118" height="34" rx="4" fill="var(--paper)"/>
+          </g>
+          <g fill="var(--ink)" font-size="13" font-weight="600" text-anchor="middle">
+            <text x="67" y="66">Dockerfile</text>
+            <text x="271" y="66">Image</text>
+            <text x="483" y="41">Container A</text>
+            <text x="483" y="81">Container B</text>
+            <text x="483" y="121">Container C</text>
+          </g>
+          <g fill="var(--ink-2)" font-size="10.5" text-anchor="middle">
+            <text x="67" y="84">công thức bạn viết</text>
+            <text x="271" y="84">khối đóng gói</text>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.6" fill="none">
+            <path d="M132 71 H200" marker-end="url(#ar)"/>
+            <path d="M336 71 H360 M360 71 V37 H416" marker-end="url(#ar)"/>
+            <path d="M360 71 H416" marker-end="url(#ar)"/>
+            <path d="M360 71 V117 H416" marker-end="url(#ar)"/>
+          </g>
+          <defs>
+            <marker id="ar" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <path d="M0 0 L7 3.5 L0 7 z" fill="var(--accent)"/>
+            </marker>
+          </defs>
+          <g class="t-lab" fill="var(--accent)" text-anchor="middle">
+            <text x="166" y="62">BUILD</text>
+            <text x="378" y="14">RUN</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Viết một lần → build ra image → chạy bao nhiêu container tuỳ ý.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- 04 -->
+<section class="sec">
+  <div class="num">04</div>
+  <div class="body-col">
+    <h2>Khác máy ảo (VM) chỗ nào?</h2>
+    <p>Câu hỏi này ai cũng hỏi, và câu trả lời ngắn hơn bạn tưởng.</p>
+    <p><strong>Máy ảo</strong> mang theo nguyên một hệ điều hành đầy đủ. Nặng vài GB, khởi động mất vài chục giây, một máy chạy được chừng chục cái.</p>
+    <p><strong>Container</strong> dùng chung nhân hệ điều hành của máy chủ, chỉ mang theo app và thư viện của nó. Nặng vài chục MB, bật trong một giây, một máy chạy được hàng trăm cái.</p>
+
+    <figure>
+      <div class="fig-box">
+        <svg viewBox="0 0 620 200" role="img" aria-label="So sánh chồng tầng của máy ảo và container">
+          <g font-size="11" fill="var(--ink)" text-anchor="middle">
+            <!-- VM -->
+            <g stroke="var(--line)" stroke-width="1.4">
+              <rect x="14" y="150" width="270" height="30" fill="var(--paper)"/>
+              <rect x="14" y="120" width="270" height="30" fill="var(--paper)"/>
+              <rect x="14" y="52"  width="86"  height="68" fill="var(--paper)"/>
+              <rect x="106" y="52" width="86"  height="68" fill="var(--paper)"/>
+              <rect x="198" y="52" width="86"  height="68" fill="var(--paper)"/>
+            </g>
+            <text x="149" y="170">Phần cứng</text>
+            <text x="149" y="140">Hypervisor</text>
+            <g fill="var(--ink-2)" font-size="10">
+              <text x="57" y="74">OS đầy đủ</text><text x="149" y="74">OS đầy đủ</text><text x="241" y="74">OS đầy đủ</text>
+            </g>
+            <g fill="var(--ink)" font-size="11" font-weight="600">
+              <text x="57" y="98">App</text><text x="149" y="98">App</text><text x="241" y="98">App</text>
+            </g>
+
+            <!-- Container -->
+            <g stroke="var(--line)" stroke-width="1.4">
+              <rect x="336" y="150" width="270" height="30" fill="var(--paper)"/>
+              <rect x="336" y="120" width="270" height="30" fill="var(--paper)"/>
+              <rect x="336" y="90"  width="270" height="30" fill="var(--paper)"/>
+              <rect x="336" y="52"  width="63"  height="38" fill="var(--paper)"/>
+              <rect x="405" y="52"  width="63"  height="38" fill="var(--paper)"/>
+              <rect x="474" y="52"  width="63"  height="38" fill="var(--paper)"/>
+              <rect x="543" y="52"  width="63"  height="38" fill="var(--paper)"/>
+            </g>
+            <text x="471" y="170">Phần cứng</text>
+            <text x="471" y="140">Một OS duy nhất</text>
+            <text x="471" y="110">Docker Engine</text>
+            <g font-size="10.5" font-weight="600">
+              <text x="367" y="76">App</text><text x="436" y="76">App</text><text x="505" y="76">App</text><text x="574" y="76">App</text>
+            </g>
+          </g>
+          <g class="t-lab" fill="var(--accent)" text-anchor="middle">
+            <text x="149" y="30">MÁY ẢO — NẶNG</text>
+            <text x="471" y="30">CONTAINER — NHẸ</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>Container bỏ đi tầng hệ điều hành lặp lại — đó là toàn bộ bí mật của tốc độ.</figcaption>
+    </figure>
+
+    <p>Bạn chỉ cần nhớ đến đây. Phần kỹ thuật bên dưới (namespace, cgroups) để dành cho lúc khác.</p>
+  </div>
+</section>
+
+<!-- 05 -->
+<section class="sec">
+  <div class="num">05</div>
+  <div class="body-col">
+    <h2>Chạy thử trong 60 giây</h2>
+    <p>Mở terminal và gõ đúng một dòng này:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="k">docker</span> run -d -p 8080:80 --name web nginx</pre>
+    </div>
+    <p>Mở trình duyệt vào <code>http://localhost:8080</code> — bạn có một web server đang chạy.</p>
+    <p><strong>Bạn vừa chạy nginx mà không hề cài nginx.</strong> Không tải file, không sửa config, không lo phiên bản. Máy bạn sạch y như trước.</p>
+
+    <h3>Xem và dọn dẹp</h3>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="c"># đang có gì chạy?</span>
+<span class="k">docker</span> ps
+
+<span class="c"># nó đang nói gì?</span>
+<span class="k">docker</span> logs web
+
+<span class="c"># chui vào bên trong container</span>
+<span class="k">docker</span> exec -it web bash
+
+<span class="c"># tắt và xoá sạch</span>
+<span class="k">docker</span> stop web
+<span class="k">docker</span> rm web</pre>
+    </div>
+    <p>Xoá xong là biến mất hoàn toàn, không để lại rác trên máy. Đây là lý do Docker rất hợp để <strong>thử nghiệm thoải mái</strong>: muốn thử PostgreSQL, Redis, MongoDB? Một dòng lệnh, chán thì xoá.</p>
+  </div>
+</section>
+
+<!-- 06 -->
+<section class="sec">
+  <div class="num">06</div>
+  <div class="body-col">
+    <h2>Mười lệnh sống còn</h2>
+    <p>Thuộc bảng này là đủ dùng cho 90% công việc hằng ngày.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Lệnh</th><th>Làm gì</th></tr></thead>
+        <tbody>
+          <tr><td>docker run</td><td>Tạo và bật một container từ image</td></tr>
+          <tr><td>docker ps</td><td>Liệt kê container đang chạy (thêm <code>-a</code> để thấy cả cái đã tắt)</td></tr>
+          <tr><td>docker images</td><td>Liệt kê image đang có trên máy</td></tr>
+          <tr><td>docker pull</td><td>Tải image từ Docker Hub về</td></tr>
+          <tr><td>docker build</td><td>Đóng gói code của bạn thành image</td></tr>
+          <tr><td>docker logs</td><td>Xem log — dùng nhiều nhất khi debug</td></tr>
+          <tr><td>docker exec -it</td><td>Mở terminal bên trong container đang chạy</td></tr>
+          <tr><td>docker stop / start</td><td>Tắt / bật lại container</td></tr>
+          <tr><td>docker rm / rmi</td><td>Xoá container / xoá image</td></tr>
+          <tr><td>docker system prune</td><td>Dọn rác, giải phóng ổ cứng</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <span class="label">Mẹo nhớ</span>
+      <p>Lệnh nào cũng theo công thức <code>docker &lt;danh từ&gt; &lt;động từ&gt;</code> hoặc <code>docker &lt;động từ&gt;</code>. Quên cú pháp thì gõ <code>docker run --help</code> — nhanh hơn tra Google.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 07 -->
+<section class="sec">
+  <div class="num">07</div>
+  <div class="body-col">
+    <h2>Tự đóng gói app của bạn</h2>
+    <p>Đến đây bạn mới chỉ chạy đồ người khác làm sẵn. Giờ đóng gói app của chính mình bằng một file tên <code>Dockerfile</code> (không có đuôi mở rộng).</p>
+    <p>Giả sử bạn có một app Node.js đơn giản:</p>
+
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>Dockerfile</div>
+      <pre><span class="k">FROM</span> node:20-slim
+<span class="k">WORKDIR</span> /app
+<span class="k">COPY</span> package*.json ./
+<span class="k">RUN</span> npm install
+<span class="k">COPY</span> . .
+<span class="k">EXPOSE</span> 3000
+<span class="k">CMD</span> [<span class="s">"node"</span>, <span class="s">"server.js"</span>]</pre>
+    </div>
+
+    <p>Đọc từng dòng như một công thức nấu ăn:</p>
+    <ul class="plain">
+      <li><strong>FROM</strong> — bắt đầu từ một cái nền có sẵn. Ở đây là Node 20 bản gọn. Không ai xây từ số 0.</li>
+      <li><strong>WORKDIR</strong> — vào thư mục làm việc bên trong container, giống <code>cd /app</code>.</li>
+      <li><strong>COPY package*.json</strong> — chép <em>riêng</em> file khai báo thư viện trước. Nghe lạ, nhưng cực kỳ quan trọng (xem mẹo bên dưới).</li>
+      <li><strong>RUN npm install</strong> — cài thư viện, chạy lúc build.</li>
+      <li><strong>COPY . .</strong> — giờ mới chép toàn bộ code vào.</li>
+      <li><strong>EXPOSE</strong> — khai báo app lắng nghe cổng 3000. Mang tính ghi chú cho người đọc.</li>
+      <li><strong>CMD</strong> — lệnh chạy khi container bật lên. Chỉ chạy lúc run, không phải lúc build.</li>
+    </ul>
+
+    <div class="tip">
+      <span class="label">Vì sao chép package.json trước?</span>
+      <p>Docker cache lại từng dòng. Nếu bạn chép hết code cùng lúc, sửa một dấu chấm phẩy cũng khiến <code>npm install</code> chạy lại từ đầu. Tách ra thì Docker biết thư viện chưa đổi và <strong>bỏ qua bước cài</strong> — build từ 2 phút xuống 3 giây.</p>
+    </div>
+
+    <h3>Build rồi chạy</h3>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="c"># đóng gói (dấu chấm = thư mục hiện tại)</span>
+<span class="k">docker</span> build -t myapp:1.0 .
+
+<span class="c"># bật lên</span>
+<span class="k">docker</span> run -d -p 3000:3000 --name myapp myapp:1.0</pre>
+    </div>
+    <p>Đừng quên tạo file <code>.dockerignore</code> cạnh Dockerfile, nếu không bạn sẽ chép cả <code>node_modules</code> và <code>.git</code> vào image:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>.dockerignore</div>
+      <pre>node_modules
+.git
+.env
+*.log</pre>
+    </div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section class="sec">
+  <div class="num">08</div>
+  <div class="body-col">
+    <h2>Hai thứ người mới hay nhầm: <code>-p</code> và <code>-v</code></h2>
+
+    <h3>-p là cái cửa</h3>
+    <p>Container mặc định kín như một cái thùng — không ai bên ngoài vào được. Cờ <code>-p</code> đục một cái cửa.</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>ghi nhớ thứ tự</div>
+      <pre>-p 8080:3000
+   <span class="c">└┬─┘ └┬─┘</span>
+    <span class="c">│    └── cổng BÊN TRONG container</span>
+    <span class="c">└─────── cổng TRÊN MÁY BẠN</span></pre>
+    </div>
+    <div class="tip">
+      <span class="label">Mẹo nhớ</span>
+      <p><strong>NGOÀI : TRONG</strong>. Bên trái là cái bạn gõ vào trình duyệt, bên phải là cái app đang lắng nghe. Nhầm thứ tự là lỗi phổ biến số một.</p>
+    </div>
+
+    <h3>-v là cái ổ cứng ngoài</h3>
+    <p>Container giống một <strong>tấm bảng trắng</strong>: xoá container là mất sạch mọi thứ đã ghi bên trong. Với database thì đó là thảm hoạ.</p>
+    <p><code>-v</code> gắn một thư mục thật trên máy bạn vào bên trong container, nên dữ liệu sống sót qua mọi lần xoá:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="k">docker</span> run -d \
+  -p 5432:5432 \
+  -e POSTGRES_PASSWORD=matkhau123 \
+  -v pgdata:/var/lib/postgresql/data \
+  --name db postgres:16</pre>
+    </div>
+    <div class="tip">
+      <span class="label">Mẹo nhớ</span>
+      <p>Container là <strong>bảng trắng</strong> — xoá là sạch. Volume là <strong>quyển vở</strong> — giữ lại được.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 09 -->
+<section class="sec">
+  <div class="num">09</div>
+  <div class="body-col">
+    <h2>Nhiều container cùng lúc: Compose</h2>
+    <p>App thật hiếm khi chạy một mình — thường có web + database + cache. Gõ ba lệnh <code>docker run</code> dài dằng dặc mỗi sáng thì rất mệt.</p>
+    <p><strong>Docker Compose</strong> cho phép mô tả tất cả trong một file <code>docker-compose.yml</code>:</p>
+
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>docker-compose.yml</div>
+      <pre><span class="k">services</span>:
+  <span class="k">web</span>:
+    build: .
+    ports:
+      - <span class="s">"3000:3000"</span>
+    environment:
+      DATABASE_URL: postgres://postgres:matkhau123@db:5432/app
+    depends_on:
+      - db
+
+  <span class="k">db</span>:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: matkhau123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+<span class="k">volumes</span>:
+  pgdata:</pre>
+    </div>
+
+    <p>Bật toàn bộ hệ thống bằng một lệnh, tắt cũng một lệnh:</p>
+    <div class="code">
+      <div class="code-bar"><span class="dot"></span>terminal</div>
+      <pre><span class="k">docker</span> compose up -d      <span class="c"># bật tất cả</span>
+<span class="k">docker</span> compose logs -f     <span class="c"># xem log tất cả</span>
+<span class="k">docker</span> compose down        <span class="c"># tắt và dọn</span></pre>
+    </div>
+
+    <div class="tip">
+      <span class="label">Chú ý dòng DATABASE_URL</span>
+      <p>Địa chỉ database là <code>db</code> — đúng bằng tên service. Compose tự tạo mạng riêng để các container gọi nhau <strong>bằng tên</strong>. Đây là mẹo cực kỳ tiện mà người mới thường không biết.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="sec">
+  <div class="num">10</div>
+  <div class="body-col">
+    <h2>Năm lỗi người mới nào cũng dính</h2>
+    <ol class="steps">
+      <li><strong>Sửa code xong mà không thấy gì đổi.</strong> Image đã build là đông cứng. Phải <code>docker build</code> lại rồi chạy lại container. (Lúc dev, dùng <code>-v</code> mount code vào để khỏi build mỗi lần.)</li>
+      <li><strong>Gõ localhost trong container mà không kết nối được.</strong> Bên trong container, <code>localhost</code> là chính nó, không phải máy bạn. Muốn gọi container khác thì gọi bằng <strong>tên service</strong>.</li>
+      <li><strong>Mất sạch dữ liệu database.</strong> Quên <code>-v</code>. Xoá container là xoá luôn dữ liệu. Không có nút hoàn tác.</li>
+      <li><strong>Image nặng 1.5 GB.</strong> Dùng bản <code>-slim</code> hoặc <code>-alpine</code>, thêm <code>.dockerignore</code>, và tìm hiểu multi-stage build khi đã quen.</li>
+      <li><strong>Ổ cứng đầy sau vài tuần.</strong> Image cũ và container chết tích lại rất nhanh. Chạy <code>docker system prune -a</code> định kỳ.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="sec">
+  <div class="num">11</div>
+  <div class="body-col">
+    <h2>Bài tập về nhà</h2>
+    <p>Đọc mười lần không bằng gõ một lần. Làm ba việc này là bạn thật sự biết Docker:</p>
+    <ol class="steps">
+      <li>Chạy một <code>postgres</code> có volume, kết nối vào bằng công cụ DB quen thuộc, tạo một bảng. Xoá container rồi bật lại — kiểm tra bảng còn không.</li>
+      <li>Viết <code>Dockerfile</code> cho một app nhỏ bạn từng làm. Build, chạy, mở được trên trình duyệt.</li>
+      <li>Ghép hai thứ trên vào một <code>docker-compose.yml</code>. Chạy được bằng đúng một lệnh <code>docker compose up</code>.</li>
+    </ol>
+    <p>Làm xong ba bài này, bạn đã vượt qua vạch xuất phát. Những thứ tiếp theo — multi-stage build, healthcheck, đưa image lên registry, rồi Kubernetes — sẽ dễ hiểu hơn nhiều khi bạn đã có nền tảng thực hành.</p>
+  </div>
+</section>
+
+<div class="closing">
+  <span class="label">Nếu chỉ nhớ được bốn điều</span>
+  <h2>Bản tóm tắt 30 giây</h2>
+  <p>In ra dán cạnh màn hình. Bốn ô này là bộ khung để treo mọi kiến thức Docker về sau.</p>
+  <div class="recall">
+    <div><b>Image / Container</b><span>Image nằm im, container đang chạy. Một image → nhiều container.</span></div>
+    <div><b>-p ngoài:trong</b><span>Bên trái là cổng bạn gõ vào trình duyệt, bên phải là cổng app lắng nghe.</span></div>
+    <div><b>-v để giữ dữ liệu</b><span>Không có volume thì xoá container là mất trắng.</span></div>
+    <div><b>Gọi nhau bằng tên</b><span>Trong Compose, container tìm nhau qua tên service — không dùng localhost.</span></div>
+  </div>
+</div>
+
+</div>

@@ -1,0 +1,344 @@
+<meta charset="utf-8">
+<title>Sổ Rèn Nghề DE</title>
+<style>
+  :root{
+    --ground:#F5F3F2; --surface:#FFFFFF; --sunk:#EFEBEA;
+    --ink:#1E1A1B; --muted:#6B6265; --faint:#918789;
+    --line:#E4DEDD; --line-strong:#CFC6C5;
+    --accent:#8A2E3B; --accent-soft:#F3E6E8;
+    --ok:#3F7A55; --ok-soft:#E4EFE7;
+    --wait:#9A6A1F;
+    --shadow:0 1px 2px rgba(30,26,27,.05), 0 6px 18px -12px rgba(30,26,27,.18);
+    --mono:ui-monospace,"JetBrains Mono","SF Mono","DejaVu Sans Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Cantarell,Ubuntu,"Helvetica Neue",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --ground:#161314; --surface:#1E1A1B; --sunk:#241F21;
+      --ink:#EDE7E6; --muted:#A79D9F; --faint:#7C7274;
+      --line:#332C2E; --line-strong:#4A4143;
+      --accent:#D98A94; --accent-soft:#38252A;
+      --ok:#7FB894; --ok-soft:#203026;
+      --wait:#D3A857;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px -12px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#161314; --surface:#1E1A1B; --sunk:#241F21;
+    --ink:#EDE7E6; --muted:#A79D9F; --faint:#7C7274;
+    --line:#332C2E; --line-strong:#4A4143;
+    --accent:#D98A94; --accent-soft:#38252A;
+    --ok:#7FB894; --ok-soft:#203026;
+    --wait:#D3A857;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px -12px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:var(--sans); font-size:16px; line-height:1.6;
+    margin:0; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 24px 96px}
+
+  /* ---------- thanh tiến độ dính trên đỉnh ---------- */
+  .bar{
+    position:sticky; top:0; z-index:20;
+    background:color-mix(in srgb, var(--ground) 88%, transparent);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .bar-in{
+    max-width:1080px; margin:0 auto; padding:12px 24px;
+    display:flex; align-items:center; gap:20px; flex-wrap:wrap;
+  }
+  .bar-name{font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:600}
+  .meter{flex:1; min-width:160px; height:6px; background:var(--sunk); border-radius:99px; overflow:hidden; border:1px solid var(--line)}
+  .meter-fill{height:100%; width:0; background:var(--ok); transition:width .35s ease}
+  .bar-num{font-family:var(--mono); font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .btn{
+    font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    background:transparent; color:var(--faint); border:1px solid var(--line-strong);
+    padding:5px 10px; border-radius:4px; cursor:pointer;
+  }
+  .btn:hover{color:var(--ink); border-color:var(--ink)}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  /* ---------- mở đầu ---------- */
+  header.top{padding:64px 0 40px; border-bottom:2px solid var(--ink)}
+  h1{
+    font-family:var(--mono); font-weight:700;
+    font-size:clamp(30px,5.5vw,50px); line-height:1.05; letter-spacing:-.02em;
+    margin:0 0 18px; text-wrap:balance;
+  }
+  .sub{font-size:17px; color:var(--muted); max-width:62ch; margin:0}
+  .sub strong{color:var(--ink); font-weight:600}
+  .rule-list{
+    margin:32px 0 0; padding:0; list-style:none;
+    display:grid; gap:1px; background:var(--line);
+    border:1px solid var(--line); border-radius:6px; overflow:hidden;
+  }
+  .rule-list li{background:var(--surface); padding:14px 18px; display:flex; gap:14px; align-items:baseline}
+  .rule-k{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent); white-space:nowrap; min-width:88px}
+  .rule-v{font-size:14.5px; color:var(--muted)}
+  .rule-v strong{color:var(--ink); font-weight:600}
+
+  /* ---------- dải giai đoạn ---------- */
+  .phase{margin-top:56px}
+  .phase-head{
+    display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;
+    padding-bottom:12px; border-bottom:1px solid var(--line-strong);
+  }
+  .phase-tag{
+    font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--surface); background:var(--ink); padding:4px 9px; border-radius:3px; white-space:nowrap;
+  }
+  .phase-title{font-size:21px; font-weight:650; letter-spacing:-.01em; margin:0; flex:1; min-width:240px}
+  .phase-pct{font-family:var(--mono); font-size:12px; color:var(--faint); font-variant-numeric:tabular-nums}
+  .phase-aim{margin:12px 0 0; font-size:14.5px; color:var(--muted); max-width:70ch}
+
+  /* ---------- một tuần ---------- */
+  .week{display:grid; grid-template-columns:88px 1fr; gap:24px; padding:30px 0; border-bottom:1px solid var(--line)}
+  .week:last-child{border-bottom:none}
+  .wk-no{font-family:var(--mono); font-variant-numeric:tabular-nums}
+  .wk-no b{display:block; font-size:34px; font-weight:700; line-height:1; letter-spacing:-.03em}
+  .wk-no span{display:block; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-top:5px}
+  .wk-body{min-width:0}
+  .wk-title{font-size:18px; font-weight:650; margin:0 0 4px; letter-spacing:-.01em; text-wrap:balance}
+  .wk-done{font-size:13.5px; color:var(--muted); margin:0 0 18px}
+  .wk-done em{font-style:normal; color:var(--accent); font-weight:600}
+
+  .lanes{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:6px; overflow:hidden}
+  @media (max-width:820px){ .lanes{grid-template-columns:1fr} .week{grid-template-columns:1fr; gap:12px} .wk-no{display:flex; align-items:baseline; gap:10px} .wk-no b{font-size:24px} .wk-no span{margin-top:0} }
+  .lane{background:var(--surface); padding:14px 16px 16px}
+  .lane-h{font-family:var(--mono); font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); margin:0 0 10px; display:flex; align-items:center; gap:7px}
+  .dot{width:7px; height:7px; border-radius:50%; flex:none}
+  .d-lab{background:var(--accent)} .d-viec{background:var(--wait)} .d-bc{background:var(--ok)}
+
+  .item{display:flex; gap:10px; align-items:flex-start; padding:5px 0; cursor:pointer}
+  .item input{
+    appearance:none; width:15px; height:15px; margin:4px 0 0; flex:none; cursor:pointer;
+    border:1.5px solid var(--line-strong); border-radius:3px; background:var(--surface);
+    display:grid; place-content:center; transition:background .15s, border-color .15s;
+  }
+  .item input:checked{background:var(--ok); border-color:var(--ok)}
+  .item input:checked::after{content:""; width:8px; height:4.5px; border-left:2px solid var(--surface); border-bottom:2px solid var(--surface); transform:rotate(-45deg) translate(1px,-1.5px)}
+  .item input:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .item span{font-size:13.8px; line-height:1.5; color:var(--ink); transition:color .15s}
+  .item input:checked ~ span{color:var(--faint); text-decoration:line-through; text-decoration-color:var(--line-strong)}
+  .item a.di{text-decoration:none;border-bottom:1px dashed var(--line-strong)}
+  .item a.di:hover{border-bottom-color:var(--accent)}
+  .item a.di:hover code{color:var(--accent);background:var(--accent-soft)}
+  .week{scroll-margin-top:64px}
+  .doc{display:inline-flex;align-items:center;gap:7px;margin-top:18px;padding:9px 14px;
+    border:1px solid var(--line-strong);border-radius:6px;text-decoration:none;
+    color:var(--ink);font-size:14px;background:var(--surface)}
+  .doc:hover{border-color:var(--accent)}
+  .doc b{font-family:var(--mono);font-size:10.5px;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--accent);font-weight:600}
+  .item code{font-family:var(--mono); font-size:12.4px; background:var(--sunk); padding:1px 5px; border-radius:3px; color:var(--accent); white-space:nowrap}
+
+  .moc{
+    margin:26px 0 0; padding:14px 18px; border-radius:6px;
+    background:var(--accent-soft); border:1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    font-size:14px; color:var(--ink);
+  }
+  .moc b{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); display:block; margin-bottom:5px}
+
+  /* ---------- sổ bằng chứng ---------- */
+  .log{margin-top:60px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:var(--shadow); overflow:hidden}
+  .log-h{padding:20px 24px 0}
+  .log-h h2{font-family:var(--mono); font-size:16px; font-weight:700; margin:0 0 6px; letter-spacing:-.01em}
+  .log-h p{margin:0; font-size:14px; color:var(--muted); max-width:64ch}
+  pre{
+    margin:18px 0 0; padding:20px 24px; background:var(--sunk); border-top:1px solid var(--line);
+    font-family:var(--mono); font-size:13px; line-height:1.75; color:var(--ink);
+    overflow-x:auto; white-space:pre;
+  }
+  footer{margin-top:44px; padding-top:22px; border-top:1px solid var(--line); font-size:13px; color:var(--faint)}
+  footer code{font-family:var(--mono); color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important} }
+</style>
+
+<div class="bar">
+  <div class="bar-in">
+    <span class="bar-name">Sổ rèn nghề</span>
+    <div class="meter"><div class="meter-fill" id="fill"></div></div>
+    <span class="bar-num" id="num">0/0 việc</span>
+    <button class="btn" id="reset" type="button">Xoá tiến độ</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <h1>12 tuần rèn nghề Data Engineer</h1>
+    <p class="sub">Không phải danh sách công nghệ cần biết. Đây là <strong>lịch tập</strong>: mỗi tuần một buổi ở sân tập, một việc thật ở công ty, và một thứ để lại làm bằng chứng.</p>
+    <ul class="rule-list">
+      <li><span class="rule-k">Sân tập</span><span class="rule-v">Thư mục <strong>de-lab</strong> ở máy bạn. Chạy <strong>./lab</strong> là biết phải làm gì tiếp.</span></li>
+      <li><span class="rule-k">Việc thật</span><span class="rule-v">Ép mỗi task được giao dạy bạn đúng một thứ. Không có task phù hợp thì bỏ trống tuần đó, đừng bịa.</span></li>
+      <li><span class="rule-k">Bằng chứng</span><span class="rule-v">Thứ đưa ra được cho người khác xem. Đây là thứ bạn mang tới buổi đánh giá.</span></li>
+      <li><span class="rule-k">Xong là gì</span><span class="rule-v">Hôm sau làm lại từ đầu, <strong>không Google, dưới 20 phút</strong>. Đọc xong tài liệu không tính là xong.</span></li>
+    </ul>
+    <a class="doc" href="https://claude.ai/code/artifact/4084a1df-6de4-4cba-91d8-e0f73a9ec05f" target="_blank" rel="noopener">
+      <b>Cẩm nang</b><span>Phần giảng 7 bài lab + từ điển thuật ngữ →</span></a>
+  </header>
+
+  <main id="app"></main>
+
+  <section class="log">
+    <div class="log-h">
+      <h2>Sổ bằng chứng — 10 phút mỗi tối thứ Sáu</h2>
+      <p>Phần khó nhất của tự học không phải là học, mà là không thấy mình tiến. Bốn dòng này giải quyết cả hai việc: bạn nhìn được đường đi của mình, và tới buổi đánh giá bạn có cái để mở ra thay vì nói chung chung.</p>
+    </div>
+<pre>Tuần __  (ngày __/__)
+
+  Làm được         :
+  Hỏng ở đâu, sửa sao :
+  Chưa hiểu → mang về lab :
+  Hỏi ai, học được gì :</pre>
+  </section>
+
+  <footer>
+    Sân tập: <code>~/Desktop/Test/de-lab</code> — chạy <code>./lab</code> để bắt đầu.
+    Tiến độ tick ở trang này lưu ngay trên máy bạn, không gửi đi đâu.
+  </footer>
+</div>
+
+<script>
+const KEHOACH=[
+{tag:"Tuần 1–3",title:"Nền dbt: chạy được, và hiểu vì sao nó chạy",
+ aim:"Hết giai đoạn này, mở một model bất kỳ trong repo team ra là bạn nói được: nó lấy dữ liệu từ đâu, ghi vào đâu, ai chạy nó, và nếu nó sai thì sai ở đâu.",
+ tuan:[
+ {so:1,title:"dbt sinh ra SQL, engine mới là thứ chạy SQL",
+  done:"Bạn giải thích được cho người ngoài ngành: <em>ref() khác gì viết thẳng tên bảng</em>.",
+  lab:["<code>./lab bai 1</code> — đặt cạnh nhau file bạn viết và file dbt sinh ra","<code>./lab bai 2</code> — thêm một cột bằng ref(), xem cây lineage tự đổi"],
+  viec:["Clone repo airflow-dbt của team, chạy <code>dbt parse</code> (chỉ parse, chưa run)","Chọn 1 bảng mart bất kỳ, lần ngược lên tận source, vẽ ra giấy"],
+  bc:["Sơ đồ tay: 1 bảng mart → các model trung gian → source"]},
+ {so:2,title:"Nhìn tận mắt dữ liệu sai trông như thế nào",
+  done:"Bạn nói được vì sao một pipeline <em>xanh</em> vẫn có thể gửi tin nhắn 2 lần cho khách.",
+  lab:["<code>./lab bai 3</code> — tự tay tạo ra lỗi nhân dòng, rồi soi bằng <code>./lab dem</code>","<code>./lab bai 4</code> — viết test cho nó đỏ trước, sửa sau"],
+  viec:["Task GSM: viết model staging đầu tiên, mở PR nháp sớm để lấy góp ý","Tìm trong repo team 1 model incremental, đọc xem nó khai báo unique_key thế nào"],
+  bc:["PR nháp có kèm ít nhất 1 dbt test do bạn viết"]},
+ {so:3,title:"Chạy lại được thì mới gọi là chạy được",
+  done:"Bạn trả lời được: <em>model này chạy lại 3 lần có ra cùng kết quả không, vì sao</em>.",
+  lab:["<code>./lab bai 5</code> — idempotency, và cái bẫy full-refresh","<code>./lab bai 6</code> — snapshot SCD2, giữ lại lịch sử thay đổi"],
+  viec:["Chạy <code>dbt test</code> trên nhánh của mình, sửa tới khi xanh","Hỏi mentor: team backfill một model bằng cách nào, ai được phép làm"],
+  bc:["Ghi lại 1 lỗi bạn tự tìm ra và tự sửa, kèm cách bạn phát hiện"]}]},
+
+{tag:"Tuần 4–6",title:"BigQuery thật: đúng thôi chưa đủ, còn phải rẻ",
+ aim:"Đây là phần DuckDB không dạy được, và cũng là phần dễ gây ấn tượng nhất — rất ít người mới quan tâm tới chi phí, nên khi bạn quan tâm thì rất dễ nhận ra.",
+ tuan:[
+ {so:4,title:"Mỗi câu query là một dòng trên hoá đơn",
+  done:"Trước khi bấm chạy bất kỳ query nào, bạn đã biết nó quét bao nhiêu byte.",
+  lab:["<code>./lab bai 7</code> — chạy đúng bộ model đó trên BigQuery sandbox","Ghi lại 3 chỗ phải sửa khi đổi engine (gợi ý: <code>date_diff</code>)"],
+  viec:["Bật thói quen dry-run: xem <em>This query will process X bytes</em> trước mọi lần chạy","Tìm xem team có dashboard theo dõi chi phí BigQuery không, xin quyền xem"],
+  bc:["Bảng so sánh bytes quét: cùng 1 query, có và không có điều kiện lọc partition"]},
+ {so:5,title:"Partition và cluster: hai dòng config đổi cả hoá đơn",
+  done:"Bạn nhìn một bảng lớn là đoán được nên partition theo cột nào, và giải thích được vì sao.",
+  lab:["Thêm <code>partition_by</code> + <code>cluster_by</code> vào fct_bookings trên target bq","Đo bytes quét trước và sau — chính con số đó là tiền"],
+  viec:["Mở 3 bảng lớn nhất trong DWH team, xem chúng partition theo cột gì","Tìm 1 bảng chưa partition mà đáng lẽ nên có — hỏi mentor vì sao chưa"],
+  bc:["Một ghi chú ngắn: bảng nào nên partition theo cột nào, tiết kiệm ước tính bao nhiêu"]},
+ {so:6,title:"Incremental trên bảng thật",
+  done:"Bạn tự chuyển được một model từ quét toàn bộ sang incremental mà không làm sai dữ liệu.",
+  lab:["So sánh chiến lược <code>merge</code> (BigQuery) với <code>delete+insert</code> (DuckDB)","Thử chạy full-refresh trên bq và đo chi phí so với chạy incremental"],
+  viec:["Chuyển 1 model của bạn sang incremental, đo thời gian và chi phí trước/sau","Viết vào PR phần mô tả: vì sao chọn unique_key đó"],
+  bc:["Số liệu trước/sau trong mô tả PR — thời gian chạy và bytes quét"]}]},
+
+{tag:"Tuần 7–9",title:"Airflow: pipeline tự chạy, và tự hỏng",
+ aim:"Chuyển từ người viết SQL sang người vận hành hệ thống. Đây là ranh giới thật giữa analyst và data engineer.",
+ moc:"Mốc đánh giá thử việc thường rơi vào quanh giai đoạn này. Trước buổi đó, mở sổ bằng chứng ra và gom lại: bạn đã đưa gì lên prod, đã tự tìm ra lỗi nào, đã tiết kiệm được gì.",
+ tuan:[
+ {so:7,title:"Một DAG gọi dbt, chạy lại bao nhiêu lần cũng được",
+  done:"DAG của bạn bị kill giữa chừng rồi chạy lại vẫn ra đúng kết quả.",
+  lab:["Dùng lại Airflow local trong ShopVN, thêm 1 DAG gọi <code>dbt run</code> của de-lab","Cố tình kill task giữa chừng, chạy lại, kiểm tra dữ liệu bằng <code>./lab dem</code>"],
+  viec:["Đọc DAG đang chạy task của bạn: retry mấy lần, cách nhau bao lâu, ai nhận cảnh báo","Hỏi mentor: task của bạn nằm ở đâu trong DAG, phụ thuộc ai, ai phụ thuộc nó"],
+  bc:["File DAG bạn tự viết, có retry và không nhân dòng khi chạy lại"]},
+ {so:8,title:"Backfill: chạy lại quá khứ mà không làm vỡ hiện tại",
+  done:"Bạn ước tính được backfill 6 tháng mất bao lâu và tốn bao nhiêu, trước khi bấm chạy.",
+  lab:["Hiểu <code>catchup</code> và khoảng ngày: chạy lại 1 khoảng, kiểm tra không nhân dòng","Thử backfill khi model thiếu QUALIFY — xem nó hỏng thế nào"],
+  viec:["Hỏi xin xem lại một lần backfill thật của team: vì sao phải làm, làm thế nào","Viết trước quy trình backfill cho model bạn own, để sẵn đó"],
+  bc:["Quy trình backfill 5 bước cho model của bạn, có ước tính thời gian và chi phí"]},
+ {so:9,title:"Khi pipeline đỏ lúc 2 giờ sáng",
+  done:"Nhận được cảnh báo, bạn biết mở gì trước, đọc gì tiếp, và khi nào thì phải gọi người.",
+  lab:["Cố tình làm hỏng 1 model rồi tự đọc log dbt để tìm lại — tính giờ","Đọc <code>target/run_results.json</code>: model nào chậm nhất, vì sao"],
+  viec:["Quan sát một sự cố thật của team, viết lại timeline: phát hiện lúc nào, sửa thế nào","Đăng ký đứng cùng người trực để xem quy trình xử lý"],
+  bc:["Bản viết lại một sự cố: nguyên nhân, cách sửa, cách để nó không lặp lại"]}]},
+
+{tag:"Tuần 10–12",title:"Làm chủ một mảnh, không chỉ làm xong task",
+ aim:"Thứ tách junior với người mới không phải số công cụ biết, mà là có một mảnh dữ liệu mà cả team mặc định hỏi bạn khi cần.",
+ tuan:[
+ {so:10,title:"Data modeling: grain là câu hỏi đầu tiên",
+  done:"Trước khi viết dòng SQL nào, bạn tự trả lời được: <em>một dòng trong bảng này là gì</em>.",
+  lab:["Viết lại mart của lab ở grain khác (1 dòng = 1 khách/tháng thay vì 1 đơn)","Áp SCD Type 2 vào một bảng dimension thật của lab"],
+  viec:["Với mỗi bảng bạn đụng vào, viết 1 câu mô tả grain vào phần description","Tìm trong DWH team 1 bảng có grain mập mờ — hỏi mentor xem có đúng không"],
+  bc:["Mô tả grain cho tất cả model bạn đã viết, đưa thẳng vào file .yml"]},
+ {so:11,title:"Một model từ source tới mart, của riêng bạn",
+  done:"Có một bảng trong DWH mà bạn là người hiểu rõ nhất, và tài liệu chứng minh điều đó.",
+  lab:["Không có bài lab tuần này — dồn toàn bộ thời gian cho việc thật"],
+  viec:["Nhận (hoặc xin) một model để own trọn: source → staging → mart","Đủ bộ: test, description từng cột, khai báo exposure nếu có hệ thống dùng"],
+  bc:["Link tới dbt docs của model bạn own, có lineage và mô tả đầy đủ"]},
+ {so:12,title:"Đọc code người khác, và nói được về việc mình làm",
+  done:"Bạn review PR của người khác và chỉ ra được vấn đề thật, không chỉ bắt lỗi format.",
+  lab:["Đọc lại toàn bộ model trong de-lab, tìm 3 chỗ bạn sẽ viết khác đi so với tuần 1"],
+  viec:["Review PR của một đồng nghiệp: soi grain, unique_key, và chi phí query","Gom sổ bằng chứng 12 tuần thành một trang tóm tắt"],
+  bc:["Trang tóm tắt: đã đưa gì lên prod, tự tìm ra lỗi nào, tiết kiệm được gì, học được gì"]}]}
+];
+
+const CAM_NANG="https://claude.ai/code/artifact/4084a1df-6de4-4cba-91d8-e0f73a9ec05f";
+const LANE=[["lab","Sân tập","d-lab"],["viec","Việc thật","d-viec"],["bc","Bằng chứng","d-bc"]];
+const KEY="so-ren-nghe-de";
+let luu={};
+try{ luu=JSON.parse(localStorage.getItem(KEY)||"{}"); }catch(e){ luu={}; }
+
+const app=document.getElementById("app");
+let tong=0;
+
+app.innerHTML=KEHOACH.map((gd,gi)=>{
+  const tuan=gd.tuan.map(t=>{
+    const lanes=LANE.map(([k,nhan,dot])=>{
+      const items=(t[k]||[]).map((noi,i)=>{
+        const id=`w${t.so}-${k}-${i}`; tong++;
+        const tick=luu[id]?" checked":"";
+        const noiLink=k==="lab"
+          ? noi.replace(/<code>\.\/lab bai (\d)<\/code>/g,
+              `<a class="di" href="${CAM_NANG}#bai-$1" target="_blank" rel="noopener"><code>./lab bai $1</code></a>`)
+          : noi;
+        return `<label class="item"><input type="checkbox" data-id="${id}" data-gd="${gi}"${tick}><span>${noiLink}</span></label>`;
+      }).join("");
+      return `<div class="lane"><p class="lane-h"><i class="dot ${dot}"></i>${nhan}</p>${items}</div>`;
+    }).join("");
+    return `<article class="week" id="tuan-${t.so}"><div class="wk-no"><b>${String(t.so).padStart(2,"0")}</b><span>tuần</span></div>
+      <div class="wk-body"><h3 class="wk-title">${t.title}</h3>
+      <p class="wk-done">Xong khi: ${t.done}</p>
+      <div class="lanes">${lanes}</div></div></article>`;
+  }).join("");
+  const moc=gd.moc?`<p class="moc"><b>Điểm dừng</b>${gd.moc}</p>`:"";
+  return `<section class="phase"><div class="phase-head"><span class="phase-tag">${gd.tag}</span>
+    <h2 class="phase-title">${gd.title}</h2><span class="phase-pct" data-pct="${gi}"></span></div>
+    <p class="phase-aim">${gd.aim}</p>${moc}${tuan}</section>`;
+}).join("");
+
+const oCheck=[...document.querySelectorAll("input[type=checkbox]")];
+function veLai(){
+  const xong=oCheck.filter(o=>o.checked).length;
+  document.getElementById("fill").style.width=(tong?xong/tong*100:0)+"%";
+  document.getElementById("num").textContent=`${xong}/${tong} việc`;
+  document.querySelectorAll("[data-pct]").forEach(el=>{
+    const gi=el.dataset.pct;
+    const nhom=oCheck.filter(o=>o.dataset.gd===gi);
+    const d=nhom.filter(o=>o.checked).length;
+    el.textContent=d?`${d}/${nhom.length}`:"";
+  });
+}
+oCheck.forEach(o=>o.addEventListener("change",()=>{
+  luu[o.dataset.id]=o.checked;
+  if(!o.checked) delete luu[o.dataset.id];
+  try{ localStorage.setItem(KEY,JSON.stringify(luu)); }catch(e){}
+  veLai();
+}));
+document.getElementById("reset").addEventListener("click",()=>{
+  luu={}; try{ localStorage.removeItem(KEY); }catch(e){}
+  oCheck.forEach(o=>o.checked=false); veLai();
+});
+veLai();
+</script>

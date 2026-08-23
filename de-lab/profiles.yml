@@ -1,0 +1,29 @@
+# ============================================================================
+# profiles.yml = THÔNG TIN KẾT NỐI. Đây là chỗ duy nhất biết engine là gì.
+#
+# Chú ý điều quan trọng nhất của cả lab này:
+#   Toàn bộ model trong models/ KHÔNG biết nó đang chạy trên engine nào.
+#   Đổi target ở đây là đổi engine, code SQL giữ nguyên.
+# ============================================================================
+de_lab:
+  target: duckdb          # target mặc định khi chạy `dbt run`
+
+  outputs:
+    # ---- ENGINE 1: DuckDB, chạy ngay trên máy, miễn phí, tha hồ phá ----
+    duckdb:
+      type: duckdb
+      path: lab.duckdb    # cả "warehouse" chỉ là 1 file. Xoá file = làm lại từ đầu.
+      schema: dwh
+      threads: 4
+
+    # ---- ENGINE 2: BigQuery sandbox (BÀI 7 mới dùng) ----
+    # Khi tới bài 7, bỏ comment khối dưới và chạy:
+    #     ./venv/bin/pip install dbt-bigquery
+    #
+    # bq:
+    #   type: bigquery
+    #   method: oauth
+    #   project: <project-sandbox-cua-ban>
+    #   dataset: de_lab
+    #   location: asia-southeast1
+    #   threads: 4

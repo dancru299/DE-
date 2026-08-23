@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng ClickHouse — thấy tận mắt cơ chế</title>
+<style>
+  :root{
+    --bg:#f6f4ea; --panel:#fffef8; --inset:#efece0; --border:#ddd8c6;
+    --text:#23221a; --dim:#6f6b58;
+    --accent:#c98a00; --accent-soft:#f4d789; --accent-ink:#2a2100;
+    --live:#158a5f; --live-soft:#c7ecdc;
+    --dead:#a49f8c; --dead-soft:#e7e3d5;
+    --flow:#2f6fd6; --flow-soft:#d3e2fb;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --r:10px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#15150f; --panel:#1e1e16; --inset:#26261b; --border:#38372b;
+      --text:#f0eee2; --dim:#a8a493;
+      --accent:#ffc814; --accent-soft:#4a3d0d; --accent-ink:#15150f;
+      --live:#46d39a; --live-soft:#123a2b;
+      --dead:#6b6656; --dead-soft:#2b2a20;
+      --flow:#6aa8ff; --flow-soft:#16294a;
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f4ea; --panel:#fffef8; --inset:#efece0; --border:#ddd8c6;
+    --text:#23221a; --dim:#6f6b58;
+    --accent:#c98a00; --accent-soft:#f4d789; --accent-ink:#2a2100;
+    --live:#158a5f; --live-soft:#c7ecdc; --dead:#a49f8c; --dead-soft:#e7e3d5;
+    --flow:#2f6fd6; --flow-soft:#d3e2fb;
+  }
+  :root[data-theme="dark"]{
+    --bg:#15150f; --panel:#1e1e16; --inset:#26261b; --border:#38372b;
+    --text:#f0eee2; --dim:#a8a493;
+    --accent:#ffc814; --accent-soft:#4a3d0d; --accent-ink:#15150f;
+    --live:#46d39a; --live-soft:#123a2b; --dead:#6b6656; --dead-soft:#2b2a20;
+    --flow:#6aa8ff; --flow-soft:#16294a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+    line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+  header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;
+    flex-wrap:wrap;margin-bottom:8px}
+  h1{font-family:var(--mono);font-size:clamp(22px,4vw,30px);font-weight:700;
+    letter-spacing:-.5px;margin:0;text-wrap:balance}
+  .sub{color:var(--dim);max-width:62ch;margin:6px 0 0}
+  .theme-btn{font-family:var(--mono);font-size:12px;background:var(--inset);
+    color:var(--text);border:1px solid var(--border);border-radius:99px;
+    padding:7px 13px;cursor:pointer}
+  .theme-btn:hover{border-color:var(--accent)}
+
+  .honest{background:var(--accent-soft);border:1px solid var(--border);
+    border-left:4px solid var(--accent);border-radius:var(--r);padding:14px 16px;
+    margin:22px 0 34px;font-size:14.5px}
+  .honest b{color:var(--text)}
+
+  section.mod{background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;padding:22px;margin:26px 0;overflow:hidden}
+  .mod-eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--accent);font-weight:700;margin:0}
+  .mod h2{font-size:20px;margin:4px 0 4px;letter-spacing:-.3px}
+  .mod .lead{color:var(--dim);margin:0 0 18px;font-size:14.5px;max-width:64ch}
+  .try{font-size:13px;color:var(--dim);font-style:italic;margin:0 0 14px}
+  .try b{color:var(--accent);font-style:normal}
+
+  .controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+  button.act{font-family:var(--mono);font-size:13px;font-weight:600;
+    border:1px solid var(--border);border-radius:8px;padding:10px 15px;cursor:pointer;
+    background:var(--inset);color:var(--text);transition:transform .08s,border-color .15s,background .15s}
+  button.act:hover{border-color:var(--accent);transform:translateY(-1px)}
+  button.act:active{transform:translateY(0)}
+  button.act:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  button.act.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  button.act.ghost{background:transparent}
+  button.act:focus-visible{outline:2px solid var(--flow);outline-offset:2px}
+
+  .stage{background:var(--inset);border:1px dashed var(--border);border-radius:var(--r);
+    padding:16px;min-height:96px}
+  .stage-label{font-family:var(--mono);font-size:11px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--dim);margin:0 0 12px}
+
+  .parts{display:flex;flex-wrap:wrap;gap:12px}
+  .part{border:1px solid var(--border);border-radius:9px;padding:11px 13px;min-width:150px;
+    background:var(--panel);position:relative;animation:pop .28s ease}
+  .part.dead{opacity:.55;background:var(--dead-soft);border-style:dashed}
+  .part.merged{box-shadow:0 0 0 2px var(--live)}
+  .pname{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.3px}
+  .pname .seg-p{color:var(--accent)} .pname .seg-b{color:var(--flow)} .pname .seg-l{color:var(--live)}
+  .pmeta{font-size:12px;color:var(--dim);margin-top:5px;font-family:var(--mono)}
+  .badge{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.5px;
+    text-transform:uppercase;padding:2px 7px;border-radius:99px;display:inline-block;margin-top:7px}
+  .badge.live{background:var(--live-soft);color:var(--live)}
+  .badge.dead{background:var(--dead-soft);color:var(--dead)}
+  @keyframes pop{from{opacity:0;transform:scale(.9) translateY(6px)}to{opacity:1;transform:none}}
+
+  .namekey{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--dim);
+    font-family:var(--mono);margin-top:14px}
+  .namekey span::before{content:"■ ";}
+  .k-p::before{color:var(--accent)} .k-b::before{color:var(--flow)} .k-l::before{color:var(--live)}
+
+  .narration{margin-top:14px;background:var(--panel);border:1px solid var(--border);
+    border-radius:var(--r);padding:12px 14px;font-size:13.5px;min-height:44px;
+    display:flex;gap:10px;align-items:flex-start}
+  .narration .tick{color:var(--live);font-weight:700;flex-shrink:0}
+  .stats{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;font-family:var(--mono);font-size:13px}
+  .stats b{color:var(--accent);font-variant-numeric:tabular-nums}
+
+  /* MV module */
+  .mvflow{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:stretch}
+  @media(max-width:640px){.mvflow{grid-template-columns:1fr;gap:16px}}
+  .tbl{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:12px}
+  .tbl h3{font-family:var(--mono);font-size:13px;margin:0 0 3px;letter-spacing:.3px}
+  .tbl .cap{font-size:11px;color:var(--dim);margin:0 0 10px}
+  .rows{display:flex;flex-direction:column;gap:5px;font-family:var(--mono);font-size:11.5px}
+  .row{display:flex;justify-content:space-between;gap:8px;padding:5px 8px;border-radius:6px;
+    background:var(--inset);animation:pop .3s ease}
+  .row.old{opacity:.5;border:1px dashed var(--border);background:transparent}
+  .row.dup{box-shadow:inset 3px 0 0 var(--accent)}
+  .row .rt{color:var(--dim)}
+  .mv-node{align-self:center;display:flex;flex-direction:column;align-items:center;gap:6px;
+    font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;padding:0 4px}
+  .mv-box{width:64px;height:64px;border-radius:12px;border:2px solid var(--accent);
+    display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--accent-soft);
+    transition:transform .2s,box-shadow .2s}
+  .mv-box.fire{animation:fire .5s ease}
+  @keyframes fire{0%{transform:scale(1)}40%{transform:scale(1.18);box-shadow:0 0 0 6px var(--accent-soft)}100%{transform:scale(1)}}
+  .arrow{font-size:18px;color:var(--flow)}
+  .empty-note{font-size:11.5px;color:var(--dim);font-style:italic;padding:8px}
+
+  .callout{background:var(--flow-soft);border:1px solid var(--border);border-left:4px solid var(--flow);
+    border-radius:var(--r);padding:12px 14px;font-size:13.5px;margin-top:16px}
+  .callout b{color:var(--text)}
+  footer{color:var(--dim);font-size:13px;text-align:center;margin-top:40px;
+    border-top:1px solid var(--border);padding-top:20px}
+  code{font-family:var(--mono);background:var(--inset);padding:1px 5px;border-radius:4px;font-size:.9em}
+
+  /* Cơ chế 3 — sparse index granules */
+  .gran-row{display:flex;flex-wrap:wrap;gap:6px}
+  .gran{flex:1 1 74px;min-width:74px;border:1px solid var(--border);border-radius:8px;
+    padding:9px 6px;background:var(--panel);text-align:center;font-family:var(--mono);
+    transition:opacity .25s,box-shadow .25s,background .25s,filter .25s}
+  .gran .gmark{font-size:12.5px;font-weight:700}
+  .gran .grange{font-size:9.5px;color:var(--dim);margin-top:3px;letter-spacing:.2px}
+  .gran.read{box-shadow:0 0 0 2px var(--accent);background:var(--accent-soft)}
+  .gran.skip{opacity:.3;filter:grayscale(.7)}
+  .mk-view{color:var(--flow)} .mk-click{color:var(--accent)} .mk-purchase{color:var(--live)}
+
+  /* Cơ chế 4 — partition pruning */
+  .part-row{display:flex;gap:10px;flex-wrap:wrap}
+  .pcard{flex:1 1 130px;min-width:130px;border:1px solid var(--border);border-radius:9px;
+    padding:12px;background:var(--panel);font-family:var(--mono);
+    transition:opacity .25s,box-shadow .25s,background .25s,filter .25s}
+  .pcard h4{margin:0 0 5px;font-size:14px}
+  .pcard .pr{font-size:11px;color:var(--dim);line-height:1.5}
+  .pcard.scan{box-shadow:0 0 0 2px var(--accent);background:var(--accent-soft)}
+  .pcard.prune{opacity:.32;filter:grayscale(.6)}
+  .pcard .verdict{font-size:11px;margin-top:7px;font-weight:700}
+  .pcard .verdict.keep{color:var(--live)} .pcard .verdict.cut{color:var(--dim)}
+
+  /* Cơ chế 5 — nén cột */
+  .cbar-row{display:flex;flex-direction:column;gap:15px}
+  .cbar .clabel{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);
+    font-size:12px;margin-bottom:5px;align-items:baseline}
+  .cbar .cname{font-weight:700} .cbar .ctype{color:var(--dim);font-size:10.5px}
+  .cbar .cratio{color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+  .cbar.win .cratio{color:var(--live)}
+  .ctrack{height:24px;background:var(--inset);border:1px solid var(--border);
+    border-radius:6px;overflow:hidden}
+  .cfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-soft));
+    width:100%;border-radius:5px;transition:width .85s cubic-bezier(.4,0,.2,1)}
+  .cbar.win .cfill{background:linear-gradient(90deg,var(--live),var(--live-soft))}
+
+  /* Mục lục */
+  html{scroll-behavior:smooth}
+  section.mod{scroll-margin-top:14px}
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin:0 0 30px}
+  .toc h3{margin:0 0 4px;font-size:15px;font-family:var(--mono);letter-spacing:.3px}
+  .toc .tsub{margin:0 0 15px;font-size:12.5px;color:var(--dim)}
+  .toc-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+  .toc-group{display:flex;flex-direction:column;gap:6px}
+  .toc-group h5{margin:0 0 3px;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;
+    text-transform:uppercase;color:var(--accent)}
+  .toc-group a{color:var(--text);text-decoration:none;font-size:13px;width:fit-content;
+    border-bottom:1px solid transparent}
+  .toc-group a:hover{border-bottom-color:var(--accent);color:var(--accent)}
+
+  /* Cơ chế 6 — columnar vs row */
+  .cellwrap{display:flex;gap:6px}
+  .cellwrap.rowmode{flex-direction:column}
+  .cellwrap.colmode{flex-direction:row;flex-wrap:wrap}
+  .strip{display:flex;gap:4px;padding:5px;border:1px dashed var(--border);border-radius:7px;align-items:center}
+  .cellwrap.colmode .strip{flex-direction:column}
+  .strip .slabel{font-family:var(--mono);font-size:9px;color:var(--dim);min-width:36px;text-align:center}
+  .strip.touched{box-shadow:0 0 0 2px var(--flow)}
+  .cell{min-width:52px;height:27px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:10px;border-radius:4px;background:var(--inset);
+    border:1px solid var(--border);transition:.3s;padding:0 4px;white-space:nowrap}
+  .cell.loaded{background:var(--flow-soft);border-color:var(--flow)}
+  .cell.need{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+
+  /* Cơ chế 7 — codec */
+  .codec-cols{display:flex;gap:20px;flex-wrap:wrap}
+  .codec-col{flex:1 1 180px;min-width:160px}
+  .codec-col h4{font-family:var(--mono);font-size:11.5px;margin:0 0 9px;color:var(--dim)}
+  .cval{font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:6px;
+    background:var(--inset);border:1px solid var(--border);margin-bottom:5px;
+    display:flex;justify-content:space-between;align-items:center;gap:10px;transition:.3s}
+  .cval.small{background:var(--live-soft);border-color:var(--live);color:var(--live)}
+  .cval .sz{height:7px;border-radius:4px;background:var(--accent);flex-shrink:0}
+  .cval.small .sz{background:var(--live)}
+
+  /* Cơ chế 8 — replacing (dùng lại .row) */
+  .row .ver{color:var(--accent);font-weight:700}
+  .row.stale{opacity:.42;text-decoration:line-through}
+
+  /* Cơ chế 10 — cluster */
+  .cluster{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+  .shard{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--inset);min-width:150px}
+  .shard > h4{font-family:var(--mono);font-size:12px;margin:0 0 10px;text-align:center;color:var(--accent)}
+  .node{padding:9px;border-radius:9px;border:1px solid var(--border);background:var(--panel);
+    text-align:center;font-family:var(--mono);font-size:10.5px;margin-bottom:8px;transition:.3s}
+  .node:last-child{margin-bottom:0}
+  .node.primary{border-color:var(--live)}
+  .node.hit{box-shadow:0 0 0 2px var(--accent);background:var(--accent-soft)}
+  .node.down{opacity:.3;filter:grayscale(1)}
+  .node .nrole{font-size:9px;color:var(--dim);margin-top:2px}
+  .node .ndata{font-weight:700;margin-top:3px}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Mô phỏng ClickHouse</h1>
+      <p class="sub">Bạn <b>bấm nút</b>, cơ chế hiện ra trước mắt. Không đọc chay — thao tác thật để hiểu <i>hành động này gây ra điều gì, cái nào tác động cái nào</i>.</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" aria-label="Đổi giao diện sáng/tối">◐ Sáng/Tối</button>
+  </header>
+
+  <div class="honest">
+    🫱 <b>Nói thẳng:</b> trong buổi lab, phần lớn lệnh là mình gõ — bạn quan sát. Trang này đảo lại: <b>bạn điều khiển</b>. Mỗi nút dưới đây tương ứng đúng một lệnh SQL bạn đã thấy.
+  </div>
+
+  <nav class="toc">
+    <h3>10 cơ chế — mục lục</h3>
+    <p class="tsub">Bấm để nhảy tới. Nhóm theo chủ đề; đọc lần lượt trong nhóm sẽ mạch lạc nhất.</p>
+    <div class="toc-groups">
+      <div class="toc-group">
+        <h5>Lưu trữ</h5>
+        <a href="#c6">6 · Columnar vs Row</a>
+        <a href="#c1">1 · MergeTree: INSERT→Part→Merge</a>
+        <a href="#c5">5 · Nén cột (LowCardinality)</a>
+        <a href="#c7">7 · Codec Delta/DoubleDelta</a>
+      </div>
+      <div class="toc-group">
+        <h5>Đọc nhanh</h5>
+        <a href="#c3">3 · Sparse index</a>
+        <a href="#c4">4 · Partition pruning</a>
+        <a href="#c9">9 · Skip index</a>
+      </div>
+      <div class="toc-group">
+        <h5>Họ MergeTree</h5>
+        <a href="#c2">2 · Materialized View</a>
+        <a href="#c8">8 · ReplacingMergeTree</a>
+      </div>
+      <div class="toc-group">
+        <h5>Mở rộng</h5>
+        <a href="#c10">10 · Sharding + Replication</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MODULE 1 -->
+  <section class="mod" id="c1">
+    <p class="mod-eyebrow">Cơ chế 1 · MergeTree</p>
+    <h2>INSERT sinh Part → OPTIMIZE gộp Part</h2>
+    <p class="lead">Quy tắc cốt lõi: <b>mỗi lần <code>INSERT</code> = một part mới trên đĩa</b>. Nhiều part rời rạc làm query chậm, nên ClickHouse <b>merge</b> chúng lại. Bấm thử và nhìn cái tên part đổi.</p>
+    <p class="try">👉 <b>Thử:</b> bấm <b>INSERT</b> vài lần → thấy nhiều part. Rồi bấm <b>OPTIMIZE</b> → xem chúng gộp làm một, tên đổi thế nào.</p>
+
+    <div class="controls">
+      <button class="act primary" id="btnInsert">▸ INSERT lô mới</button>
+      <button class="act" id="btnOptimize">⇄ OPTIMIZE FINAL (merge)</button>
+      <button class="act ghost" id="btnReset1">↺ Reset</button>
+    </div>
+
+    <div class="stage">
+      <p class="stage-label">Ổ đĩa — partition 202608</p>
+      <div class="parts" id="parts1"></div>
+      <div class="namekey">
+        <span class="k-p">202608 = partition (tháng)</span>
+        <span class="k-b">block đầu_cuối</span>
+        <span class="k-l">mức merge (level)</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div>Part active: <b id="stActive">0</b></div>
+      <div>Tổng dòng: <b id="stRows">0</b></div>
+      <div>Part đã chết: <b id="stDead">0</b></div>
+    </div>
+    <div class="narration" id="narr1"><span class="tick">›</span><span>Chưa có gì. Bấm <b>INSERT lô mới</b> để bắt đầu.</span></div>
+  </section>
+
+  <!-- MODULE 2 -->
+  <section class="mod" id="c2">
+    <p class="mod-eyebrow">Cơ chế 2 · Materialized View</p>
+    <h2>MV = trigger tự động khi INSERT</h2>
+    <p class="lead">MV <b>không phải view ảo</b>. Nó là cỗ máy: mỗi lô <code>INSERT</code> vào bảng nguồn <b>events</b> → MV tính <code>GROUP BY</code> lô đó → ghi kết quả sang bảng đích <b>events_daily</b>. Bạn chỉ đụng bảng nguồn, bảng đích tự đầy.</p>
+    <p class="try">👉 <b>Thử:</b> bấm <b>INSERT vào events</b> — nhìn gói dữ liệu chạy qua MV sang bảng đích. Bấm vài lần cùng ngày để thấy <i>cạm bẫy dòng chưa gộp</i>.</p>
+
+    <div class="controls">
+      <button class="act primary" id="btnMvInsert">▸ INSERT vào events (ngày 13/8)</button>
+      <button class="act" id="btnMvRead">👁 Đọc kiểu đúng (GROUP BY + sum)</button>
+      <button class="act ghost" id="btnMvReset">↺ Reset</button>
+    </div>
+
+    <div class="mvflow">
+      <div class="tbl">
+        <h3>events</h3>
+        <p class="cap">bảng nguồn — bạn INSERT vào đây</p>
+        <div class="rows" id="srcRows">
+          <div class="row old"><span>8 dòng cũ (trước khi có MV)</span><span class="rt">✗ không chảy</span></div>
+        </div>
+      </div>
+      <div class="mv-node">
+        <div class="arrow">→</div>
+        <div class="mv-box" id="mvBox">⚙️</div>
+        <div>events_mv<br>(trigger)</div>
+        <div class="arrow">→</div>
+      </div>
+      <div class="tbl">
+        <h3>events_daily</h3>
+        <p class="cap">bảng đích — MV tự ghi vào</p>
+        <div class="rows" id="dstRows">
+          <div class="empty-note">Trống. INSERT vào events để MV đổ dữ liệu sang.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout" id="mvCallout">
+      <b>Chú ý:</b> "8 dòng cũ" bên nguồn <b>không</b> chảy sang — MV chỉ xử lý dữ liệu INSERT <i>sau khi</i> nó được tạo.
+    </div>
+    <div class="narration" id="narr2"><span class="tick">›</span><span>Bảng đích đang trống. Bấm <b>INSERT vào events</b>.</span></div>
+  </section>
+
+  <!-- MODULE 3 -->
+  <section class="mod" id="c3">
+    <p class="mod-eyebrow">Cơ chế 3 · Sparse Index</p>
+    <h2>Vì sao ClickHouse nhanh — nhảy qua granule</h2>
+    <p class="lead">Dữ liệu đã sort theo <code>ORDER BY (event_type, event_time)</code>. Cứ mỗi <b>granule</b> (mặc định 8192 dòng) ClickHouse ghi một mốc vào primary index. Query lọc <code>event_type</code> → nó <b>chỉ đọc granule có thể chứa</b>, bỏ qua phần còn lại. Đây chính là "phép thuật" tốc độ.</p>
+    <p class="try">👉 <b>Thử:</b> chọn một giá trị lọc — xem granule nào <b>sáng</b> (phải đọc) / <b>mờ</b> (bỏ qua).</p>
+
+    <div class="controls" id="granCtrl">
+      <button class="act" data-f="view">WHERE event_type = 'view'</button>
+      <button class="act" data-f="click">= 'click'</button>
+      <button class="act" data-f="purchase">= 'purchase'</button>
+      <button class="act ghost" data-f="all">Không lọc (đọc hết)</button>
+    </div>
+    <div class="stage">
+      <p class="stage-label">8 granule — dữ liệu đã sort theo event_type</p>
+      <div class="gran-row" id="granRow"></div>
+    </div>
+    <div class="stats">
+      <div>Granule đọc: <b id="gRead">8</b>/8</div>
+      <div>Dòng quét: <b id="gRows">24</b>/24</div>
+      <div>Tiết kiệm: <b id="gSave">0%</b></div>
+    </div>
+    <div class="narration" id="narr3"><span class="tick">›</span><span>Chọn một giá trị lọc để xem sparse index làm việc.</span></div>
+  </section>
+
+  <!-- MODULE 4 -->
+  <section class="mod" id="c4">
+    <p class="mod-eyebrow">Cơ chế 4 · Partition Pruning</p>
+    <h2>Lọc theo thời gian → bỏ qua nguyên partition</h2>
+    <p class="lead"><code>PARTITION BY toYYYYMM(event_time)</code> chia dữ liệu theo tháng. Mỗi partition lưu sẵn <b>min/max thời gian</b>. Query lọc thời gian → ClickHouse <b>cắt bỏ (prune)</b> partition ngoài vùng, không thèm mở. Thô hơn granule nhưng loại được cả khối lớn.</p>
+    <p class="try">👉 <b>Thử:</b> chọn điều kiện lọc tháng — xem partition nào bị cắt ✂.</p>
+
+    <div class="controls" id="partCtrl">
+      <button class="act" data-p="eq8">WHERE tháng = 8</button>
+      <button class="act" data-p="ge7">WHERE tháng &gt;= 7</button>
+      <button class="act ghost" data-p="all">Không lọc</button>
+    </div>
+    <div class="stage">
+      <p class="stage-label">3 partition trên đĩa</p>
+      <div class="part-row" id="partRow"></div>
+    </div>
+    <div class="stats">
+      <div>Partition quét: <b id="pScan">3</b>/3</div>
+      <div>Dòng quét: <b id="pRowsScan">4.700.000</b></div>
+    </div>
+    <div class="narration" id="narr4"><span class="tick">›</span><span>Chọn điều kiện lọc để xem partition pruning.</span></div>
+  </section>
+
+  <!-- MODULE 5 -->
+  <section class="mod" id="c5">
+    <p class="mod-eyebrow">Cơ chế 5 · Nén cột</p>
+    <h2>LowCardinality nén 208× — con số thật từ lab</h2>
+    <p class="lead">ClickHouse lưu <b>theo cột</b> và nén từng cột riêng. Cột càng ít giá trị lặp lại càng nén khủng. Đây là tỷ lệ nén <b>thật</b> đo được khi bạn nhồi 2 triệu dòng.</p>
+    <p class="try">👉 <b>Thử:</b> bấm <b>Nén dữ liệu</b> — xem mỗi cột co lại bao nhiêu so với "trước nén".</p>
+
+    <div class="controls">
+      <button class="act primary" id="btnCompress">🗜 Nén dữ liệu</button>
+      <button class="act ghost" id="btnCompReset">↺ Bung ra (trước nén)</button>
+    </div>
+    <div class="stage">
+      <div class="cbar-row" id="cbars"></div>
+    </div>
+    <div class="callout">
+      <b>Đọc gì:</b> <code>event_type</code> chỉ 3 giá trị → LowCardinality nén <b>208×</b> (thanh gần như biến mất 🟢). Ngược lại <code>event_time</code> gần như <b>không nén</b> (mỗi giá trị một khác) → đây là chỗ cần <b>codec Delta/DoubleDelta</b> ở Bài 6.
+    </div>
+  </section>
+
+  <!-- MODULE 6 -->
+  <section class="mod" id="c6">
+    <p class="mod-eyebrow">Cơ chế 6 · Lưu trữ cột</p>
+    <h2>Columnar vs Row — nền tảng của mọi thứ</h2>
+    <p class="lead">Database thường (MySQL, Postgres) lưu <b>theo dòng</b>: cả dòng nằm liền nhau. ClickHouse lưu <b>theo cột</b>: mỗi cột một chỗ. Với <code>SELECT sum(revenue)</code>, kiểu cột chỉ đọc đúng cột revenue — kiểu dòng phải nạp cả bảng.</p>
+    <p class="try">👉 <b>Thử:</b> đổi giữa 2 kiểu lưu — xem để tính <code>sum(revenue)</code> phải chạm bao nhiêu ô.</p>
+    <div class="controls" id="storeCtrl">
+      <button class="act" data-s="row">Kiểu Row (MySQL/OLTP)</button>
+      <button class="act primary" data-s="col">Kiểu Column (ClickHouse)</button>
+    </div>
+    <div class="stage">
+      <p class="stage-label" id="storeLabel">Cách dữ liệu nằm trên đĩa</p>
+      <div id="cellHost" style="overflow-x:auto"></div>
+    </div>
+    <div class="stats">
+      <div>Ô phải nạp từ đĩa: <b id="cellRead">—</b></div>
+      <div>Ô thật sự cần: <b id="cellNeed">5</b></div>
+    </div>
+    <div class="narration" id="narr6"><span class="tick">›</span><span>Chọn một kiểu lưu để so sánh.</span></div>
+  </section>
+
+  <!-- MODULE 7 -->
+  <section class="mod" id="c7">
+    <p class="mod-eyebrow">Cơ chế 7 · Codec nén</p>
+    <h2>Delta / DoubleDelta — cứu cột thời gian</h2>
+    <p class="lead">Nhớ <code>event_time</code> nén 1× ở Cơ chế 5? Vì các mốc thời gian là số lớn, mỗi cái một khác. <b>Codec Delta</b> không lưu giá trị mà lưu <b>hiệu số</b> với dòng trước — thành số nhỏ lặp lại, nén cực tốt.</p>
+    <p class="try">👉 <b>Thử:</b> bấm để xem Delta rồi DoubleDelta biến dãy thời gian thành gì.</p>
+    <div class="controls" id="codecCtrl">
+      <button class="act" data-c="raw">Lưu thô</button>
+      <button class="act primary" data-c="delta">Delta</button>
+      <button class="act" data-c="dd">DoubleDelta</button>
+    </div>
+    <div class="stage">
+      <div class="codec-cols">
+        <div class="codec-col">
+          <h4>Giá trị event_time (đã sort, dạng giây)</h4>
+          <div id="codecRaw"></div>
+        </div>
+        <div class="codec-col">
+          <h4 id="codecStoredLabel">Thực sự lưu xuống đĩa</h4>
+          <div id="codecStored"></div>
+        </div>
+      </div>
+    </div>
+    <div class="narration" id="narr7"><span class="tick">›</span><span>Chọn một codec để xem dữ liệu được lưu thế nào.</span></div>
+  </section>
+
+  <!-- MODULE 8 -->
+  <section class="mod" id="c8">
+    <p class="mod-eyebrow">Cơ chế 8 · ReplacingMergeTree</p>
+    <h2>Cập nhật bản ghi — giữ phiên bản mới nhất</h2>
+    <p class="lead">ClickHouse không sửa tại chỗ. <b>ReplacingMergeTree</b> cho "cập nhật" bằng cách INSERT bản mới cùng khoá; khi merge nó <b>giữ version cao nhất</b>, bỏ bản cũ. Cùng họ với SummingMergeTree (Cơ chế 1) — nhưng thay vì cộng thì thay thế.</p>
+    <p class="try">👉 <b>Thử:</b> INSERT vài bản cập nhật cho cùng user → bấm Merge xem bản cũ biến mất.</p>
+    <div class="controls">
+      <button class="act primary" id="rmtInsert">▸ INSERT cập nhật user</button>
+      <button class="act" id="rmtMerge">⇄ Merge (dọn trùng)</button>
+      <button class="act ghost" id="rmtReset">↺ Reset</button>
+    </div>
+    <div class="stage">
+      <p class="stage-label">Bảng users_state — ORDER BY user_id, ver</p>
+      <div class="rows" id="rmtRows"></div>
+    </div>
+    <div class="narration" id="narr8"><span class="tick">›</span><span>Bảng trống. Bấm INSERT cập nhật user.</span></div>
+  </section>
+
+  <!-- MODULE 9 -->
+  <section class="mod" id="c9">
+    <p class="mod-eyebrow">Cơ chế 9 · Skip Index</p>
+    <h2>Lọc cột KHÔNG nằm trong ORDER BY</h2>
+    <p class="lead">Sparse index (Cơ chế 3) chỉ giúp cột trong <code>ORDER BY</code>. Muốn lọc nhanh cột khác (vd <code>user_id</code>) → thêm <b>skip index minmax</b>: lưu min/max mỗi khối, cho phép bỏ qua khối chắc chắn không chứa giá trị cần.</p>
+    <p class="try">👉 <b>Thử:</b> tìm một user_id — xem khối nào bị loại nhờ min/max.</p>
+    <div class="controls" id="skipCtrl">
+      <button class="act" data-v="500">WHERE user_id = 500</button>
+      <button class="act" data-v="2500">= 2500</button>
+      <button class="act" data-v="4800">= 4800</button>
+    </div>
+    <div class="stage">
+      <p class="stage-label">8 khối · mỗi khối lưu minmax(user_id)</p>
+      <div class="gran-row" id="skipRow"></div>
+    </div>
+    <div class="stats">
+      <div>Khối phải đọc: <b id="skRead">—</b>/8</div>
+      <div>Tiết kiệm: <b id="skSave">—</b></div>
+    </div>
+    <div class="narration" id="narr9"><span class="tick">›</span><span>Chọn một user_id để tìm.</span></div>
+  </section>
+
+  <!-- MODULE 10 -->
+  <section class="mod" id="c10">
+    <p class="mod-eyebrow">Cơ chế 10 · Phân tán</p>
+    <h2>Sharding + Replication — mở rộng & chống hỏng</h2>
+    <p class="lead"><b>Shard</b> = chia dữ liệu ra nhiều máy (mỗi máy giữ một phần → ghi/đọc song song, chứa được nhiều hơn). <b>Replica</b> = nhân bản mỗi shard sang máy khác (một máy chết vẫn còn bản sao). Bảng <code>Distributed</code> gộp tất cả thành một.</p>
+    <p class="try">👉 <b>Thử:</b> ghi dữ liệu (chia theo shard), truy vấn (fan-out song song), rồi cho một node hỏng.</p>
+    <div class="controls">
+      <button class="act primary" id="clWrite">▸ Ghi 1 dòng</button>
+      <button class="act" id="clQuery">🔍 Truy vấn (Distributed)</button>
+      <button class="act" id="clFail">💥 Node hỏng</button>
+      <button class="act ghost" id="clReset">↺ Reset</button>
+    </div>
+    <div class="stage">
+      <div class="cluster" id="cluster"></div>
+    </div>
+    <div class="narration" id="narr10"><span class="tick">›</span><span>Cluster 2 shard × 2 replica. Bấm Ghi 1 dòng để bắt đầu.</span></div>
+  </section>
+
+  <footer>
+    Mô phỏng khái niệm ClickHouse · 10 cơ chế cốt lõi · dựng cho lab học tập · mở lại bất cứ lúc nào trong VS Code
+  </footer>
+</div>
+
+<script>
+/* ---------- Theme toggle ---------- */
+const root=document.documentElement;
+document.getElementById('themeBtn').onclick=()=>{
+  const cur=root.getAttribute('data-theme')
+    || (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  root.setAttribute('data-theme', cur==='dark'?'light':'dark');
+};
+
+/* ---------- MODULE 1: parts & merge ---------- */
+let nextBlock=1, parts=[];
+const parts1=document.getElementById('parts1');
+const narr1=document.getElementById('narr1');
+function segName(min,max,lvl){
+  return `<span class="seg-p">202608</span>_<span class="seg-b">${min}</span>_<span class="seg-b">${max}</span>_<span class="seg-l">${lvl}</span>`;
+}
+function say1(html){narr1.innerHTML='<span class="tick">›</span><span>'+html+'</span>';}
+function renderParts(){
+  parts1.innerHTML='';
+  parts.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='part'+(p.active?'':' dead')+(p.merged?' merged':'');
+    d.innerHTML=`<div class="pname">${segName(p.min,p.max,p.lvl)}</div>`+
+      `<div class="pmeta">${p.rows} dòng · level ${p.lvl}</div>`+
+      `<span class="badge ${p.active?'live':'dead'}">${p.active?'● active':'chết'}</span>`;
+    parts1.appendChild(d);
+  });
+  const act=parts.filter(p=>p.active);
+  document.getElementById('stActive').textContent=act.length;
+  document.getElementById('stRows').textContent=act.reduce((s,p)=>s+p.rows,0);
+  document.getElementById('stDead').textContent=parts.filter(p=>!p.active).length;
+}
+document.getElementById('btnInsert').onclick=()=>{
+  const rows=2+Math.floor(Math.random()*4);
+  const b=nextBlock++;
+  parts.forEach(p=>p.merged=false);
+  parts.push({min:b,max:b,lvl:0,rows,active:true});
+  renderParts();
+  say1(`<b>INSERT</b> chạy → sinh part mới <span style="font-family:var(--mono)">${segName(b,b,0)}</span> (${rows} dòng, level 0). `+
+    (parts.filter(p=>p.active).length>1?'Giờ có nhiều part rời rạc → query phải mở tất cả. Thử <b>OPTIMIZE</b>.':'Đây là part đầu tiên.'));
+};
+document.getElementById('btnOptimize').onclick=()=>{
+  const act=parts.filter(p=>p.active);
+  if(act.length<2){say1('Cần <b>ít nhất 2 part active</b> mới có gì để merge. INSERT thêm đã.');return;}
+  const min=Math.min(...act.map(p=>p.min)), max=Math.max(...act.map(p=>p.max));
+  const lvl=Math.max(...act.map(p=>p.lvl))+1, rows=act.reduce((s,p)=>s+p.rows,0);
+  act.forEach(p=>{p.active=false;p.merged=false;});
+  parts.push({min,max,lvl,rows,active:true,merged:true});
+  renderParts();
+  say1(`<b>OPTIMIZE FINAL</b> → gộp ${act.length} part thành <span style="font-family:var(--mono)">${segName(min,max,lvl)}</span> (${rows} dòng). `+
+    `Part cũ chuyển <b>"chết"</b> (active=0), chưa xoá ngay — nhờ vậy merge <b>không khoá bảng</b>.`);
+};
+document.getElementById('btnReset1').onclick=()=>{
+  nextBlock=1;parts=[];renderParts();
+  say1('Đã reset. Bấm <b>INSERT lô mới</b> để bắt đầu.');
+};
+renderParts();
+
+/* ---------- MODULE 2: MV flow ---------- */
+const srcRows=document.getElementById('srcRows'), dstRows=document.getElementById('dstRows');
+const mvBox=document.getElementById('mvBox'), narr2=document.getElementById('narr2');
+let batches=0, dstData=[], revCycle=[100,250,500,150];
+function say2(html){narr2.innerHTML='<span class="tick">›</span><span>'+html+'</span>';}
+function renderDst(grouped){
+  if(dstData.length===0){dstRows.innerHTML='<div class="empty-note">Trống. INSERT vào events để MV đổ dữ liệu sang.</div>';return;}
+  let data;
+  if(grouped){
+    const m={};
+    dstData.forEach(r=>{const k=r.type;if(!m[k])m[k]={type:r.type,c:0,rev:0};m[k].c+=r.c;m[k].rev+=r.rev;});
+    data=Object.values(m);
+  }else{data=dstData;}
+  dstRows.innerHTML='';
+  data.forEach(r=>{
+    const dup=!grouped && dstData.filter(x=>x.type===r.type).length>1;
+    const d=document.createElement('div');
+    d.className='row'+(dup?' dup':'');
+    d.innerHTML=`<span>13/8 · ${r.type}</span><span class="rt">${r.c} sk · ${r.rev>0?r.rev.toLocaleString('vi'):0}đ</span>`;
+    dstRows.appendChild(d);
+  });
+}
+document.getElementById('btnMvInsert').onclick=()=>{
+  const rev=revCycle[batches%revCycle.length];
+  batches++;
+  // 1 lô = 2 view, 1 purchase, 1 click
+  const src=document.createElement('div');
+  src.className='row';
+  src.innerHTML=`<span>lô ${batches}: 2 view, 1 purchase, 1 click</span><span class="rt">→ MV</span>`;
+  srcRows.appendChild(src);
+  mvBox.classList.remove('fire');void mvBox.offsetWidth;mvBox.classList.add('fire');
+  // MV tính GROUP BY lô này -> 3 dòng
+  setTimeout(()=>{
+    dstData.push({type:'view',c:2,rev:0});
+    dstData.push({type:'purchase',c:1,rev});
+    dstData.push({type:'click',c:1,rev:0});
+    renderDst(false);
+    const dupNow=batches>1;
+    say2(`Lô ${batches} vào <b>events</b> → MV tính ngay → ghi <b>3 dòng</b> sang <b>events_daily</b> (purchase ${rev}đ). `+
+      (dupNow?'⚠️ Giờ <b>purchase/view bị lặp dòng</b> (mỗi lô một dòng riêng) — chưa merge nên chưa cộng dồn. Bấm <b>Đọc kiểu đúng</b>.':'Bảng đích tự có dữ liệu mà bạn không hề đụng vào nó.'));
+  },260);
+};
+document.getElementById('btnMvRead').onclick=()=>{
+  if(dstData.length===0){say2('Chưa có dữ liệu. INSERT vào events trước đã.');return;}
+  renderDst(true);
+  say2('Đọc bằng <b>GROUP BY event_type + sum()</b> → các dòng lặp được <b>cộng dồn đúng</b>. Đây là cách dashboard phải đọc SummingMergeTree — đừng tin part đã tự gộp.');
+};
+document.getElementById('btnMvReset').onclick=()=>{
+  batches=0;dstData=[];
+  srcRows.innerHTML='<div class="row old"><span>8 dòng cũ (trước khi có MV)</span><span class="rt">✗ không chảy</span></div>';
+  renderDst(false);
+  say2('Đã reset. Bảng đích trống trở lại.');
+};
+renderDst(false);
+
+/* ---------- MODULE 3: sparse index ---------- */
+const granTypes=['click','click','click','purchase','purchase','view','view','view'];
+const granRow=document.getElementById('granRow'), narr3=document.getElementById('narr3');
+function say3(html){narr3.innerHTML='<span class="tick">›</span><span>'+html+'</span>';}
+function renderGran(filter){
+  granRow.innerHTML='';
+  granTypes.forEach((t,i)=>{
+    const read = filter==='all' || t===filter;
+    const d=document.createElement('div');
+    d.className='gran '+(filter?(read?'read':'skip'):'');
+    d.innerHTML=`<div class="gmark mk-${t}">${t}</div>`+
+      `<div class="grange">dòng ${i*3+1}–${i*3+3}</div>`;
+    granRow.appendChild(d);
+  });
+  if(!filter)return;
+  const readN = filter==='all'?8:granTypes.filter(t=>t===filter).length;
+  const rows=readN*3, save=Math.round((1-readN/8)*100);
+  document.getElementById('gRead').textContent=readN;
+  document.getElementById('gRows').textContent=rows;
+  document.getElementById('gSave').textContent=save+'%';
+  if(filter==='all'){
+    say3('Không có điều kiện lọc → ClickHouse phải <b>đọc cả 8 granule</b> (quét toàn bộ). Đây là trường hợp chậm nhất.');
+  }else{
+    say3(`Lọc <b>'${filter}'</b> → primary index chỉ dẫn tới <b>${readN}/8 granule</b>, ${8-readN} granule còn lại bị <b>bỏ qua hoàn toàn</b>. Chỉ quét ${rows}/24 dòng, tiết kiệm <b>${save}%</b> I/O.`);
+  }
+}
+document.querySelectorAll('#granCtrl [data-f]').forEach(b=>{
+  b.onclick=()=>renderGran(b.dataset.f);
+});
+renderGran(null);
+
+/* ---------- MODULE 4: partition pruning ---------- */
+const partsData=[
+  {ym:'202606',thang:'Tháng 6/2026',m:6,rows:1200000},
+  {ym:'202607',thang:'Tháng 7/2026',m:7,rows:1500000},
+  {ym:'202608',thang:'Tháng 8/2026',m:8,rows:2000000},
+];
+const partRow=document.getElementById('partRow'), narr4=document.getElementById('narr4');
+function say4(html){narr4.innerHTML='<span class="tick">›</span><span>'+html+'</span>';}
+function keepPart(mode,m){
+  if(mode==='all')return true;
+  if(mode==='eq8')return m===8;
+  if(mode==='ge7')return m>=7;
+  return true;
+}
+function renderPart(mode){
+  partRow.innerHTML='';
+  let scan=0, rows=0;
+  partsData.forEach(p=>{
+    const keep=keepPart(mode,p.m);
+    if(keep){scan++;rows+=p.rows;}
+    const d=document.createElement('div');
+    d.className='pcard '+(mode?(keep?'scan':'prune'):'');
+    d.innerHTML=`<h4>${p.ym}</h4>`+
+      `<div class="pr">${p.thang}<br>${p.rows.toLocaleString('vi')} dòng</div>`+
+      (mode?`<div class="verdict ${keep?'keep':'cut'}">${keep?'✓ QUÉT':'✂ bỏ qua'}</div>`:'');
+    partRow.appendChild(d);
+  });
+  if(!mode)return;
+  document.getElementById('pScan').textContent=scan;
+  document.getElementById('pRowsScan').textContent=rows.toLocaleString('vi');
+  const lbl={eq8:"tháng = 8", ge7:"tháng >= 7", all:"không lọc"}[mode];
+  if(mode==='all'){say4('Không lọc → phải quét <b>cả 3 partition</b> (4.700.000 dòng).');}
+  else{say4(`Lọc <b>${lbl}</b> → nhờ min/max, ClickHouse chỉ mở <b>${scan}/3 partition</b> (${rows.toLocaleString('vi')} dòng). Partition ngoài vùng bị cắt trước khi đọc.`);}
+}
+document.querySelectorAll('#partCtrl [data-p]').forEach(b=>{
+  b.onclick=()=>renderPart(b.dataset.p);
+});
+renderPart(null);
+
+/* ---------- MODULE 5: nén cột ---------- */
+const cols=[
+  {name:'event_type',type:'LowCardinality(String)',ratio:208.9,win:true},
+  {name:'url',type:'String',ratio:33.5},
+  {name:'revenue',type:'Decimal(10,2)',ratio:5.9},
+  {name:'user_id',type:'UInt32',ratio:3.2},
+  {name:'event_time',type:'DateTime',ratio:1.0},
+];
+const cbars=document.getElementById('cbars');
+cols.forEach((c,i)=>{
+  const d=document.createElement('div');
+  d.className='cbar'+(c.win?' win':'');
+  d.innerHTML=`<div class="clabel"><span><span class="cname">${c.name}</span> `+
+    `<span class="ctype">${c.type}</span></span>`+
+    `<span class="cratio">${c.ratio===1?'không nén':c.ratio+'×'}</span></div>`+
+    `<div class="ctrack"><div class="cfill" id="cfill${i}"></div></div>`;
+  cbars.appendChild(d);
+});
+function setCompress(on){
+  cols.forEach((c,i)=>{
+    const w = on ? Math.max(2,100/c.ratio) : 100;
+    document.getElementById('cfill'+i).style.width=w+'%';
+  });
+}
+document.getElementById('btnCompress').onclick=()=>setCompress(true);
+document.getElementById('btnCompReset').onclick=()=>setCompress(false);
+setCompress(false);
+
+/* ---------- MODULE 6: columnar vs row ---------- */
+const cols6=[
+  {c:'event_time',vals:['09:30','09:31','09:32','09:33','09:34']},
+  {c:'user_id',vals:['3','4','5','7','9']},
+  {c:'event_type',vals:['view','click','buy','view','buy']},
+  {c:'url',vals:['/a','/b','/c','/d','/e']},
+  {c:'revenue',vals:['0','0','199','0','49']},
+];
+const N6=5, cellHost=document.getElementById('cellHost'), narr6=document.getElementById('narr6');
+function say6(h){narr6.innerHTML='<span class="tick">›</span><span>'+h+'</span>';}
+function renderStore(mode){
+  const wrap=document.createElement('div');
+  wrap.className='cellwrap '+(mode==='row'?'rowmode':'colmode');
+  if(mode==='row'){
+    for(let r=0;r<N6;r++){
+      const strip=document.createElement('div');strip.className='strip touched';
+      const lb=document.createElement('div');lb.className='slabel';lb.textContent='dòng'+(r+1);strip.appendChild(lb);
+      cols6.forEach(col=>{
+        const cell=document.createElement('div');
+        cell.className='cell '+(col.c==='revenue'?'need':'loaded');
+        cell.textContent=col.vals[r];strip.appendChild(cell);
+      });
+      wrap.appendChild(strip);
+    }
+  }else{
+    cols6.forEach(col=>{
+      const strip=document.createElement('div');strip.className='strip'+(col.c==='revenue'?' touched':'');
+      const lb=document.createElement('div');lb.className='slabel';lb.textContent=col.c;strip.appendChild(lb);
+      col.vals.forEach(v=>{
+        const cell=document.createElement('div');
+        cell.className='cell'+(col.c==='revenue'?' need':'');
+        cell.textContent=v;strip.appendChild(cell);
+      });
+      wrap.appendChild(strip);
+    });
+  }
+  cellHost.innerHTML='';cellHost.appendChild(wrap);
+  document.getElementById('cellRead').textContent = mode==='row'?(N6*cols6.length):N6;
+  document.getElementById('storeLabel').textContent = mode==='row'
+    ? 'Kiểu Row — mỗi dòng nằm liền nhau trên đĩa' : 'Kiểu Column — mỗi cột nằm liền nhau trên đĩa';
+  if(mode==='row'){
+    say6(`Kiểu <b>Row</b>: muốn cột revenue, đĩa buộc phải <b>nạp cả dòng</b> (ô xanh) rồi mới rút ô vàng. Tốn <b>${N6*cols6.length} ô</b> đọc cho ${N6} giá trị cần → phí ${Math.round((1-1/cols6.length)*100)}%.`);
+  }else{
+    say6(`Kiểu <b>Column</b> (ClickHouse): cột revenue nằm liền một khối → đọc <b>đúng ${N6} ô</b>, không đụng cột khác. Đây là lý do gốc rễ ClickHouse nhanh cho phân tích.`);
+  }
+}
+document.querySelectorAll('#storeCtrl [data-s]').forEach(b=>b.onclick=()=>renderStore(b.dataset.s));
+renderStore('col');
+
+/* ---------- MODULE 7: codec ---------- */
+const rawTimes=[1000,1001,1002,1003,1004,1005];
+const codecRaw=document.getElementById('codecRaw'), codecStored=document.getElementById('codecStored'), narr7=document.getElementById('narr7');
+function say7(h){narr7.innerHTML='<span class="tick">›</span><span>'+h+'</span>';}
+function chip(text,small,barW){
+  return `<div class="cval${small?' small':''}"><span>${text}</span><span class="sz" style="width:${barW}px"></span></div>`;
+}
+function renderCodec(mode){
+  codecRaw.innerHTML=rawTimes.map(v=>chip(v,false,46)).join('');
+  let stored,label,note;
+  if(mode==='raw'){
+    stored=rawTimes.map(v=>chip(v,false,46));
+    label='Lưu thô (mỗi số ~4 byte, khó nén)';
+    note='Lưu <b>nguyên giá trị</b>: toàn số lớn khác nhau → LZ4 gần như bó tay (nén ~1×). Đúng cột event_time ở Cơ chế 5.';
+  }else if(mode==='delta'){
+    stored=rawTimes.map((v,i)=>i===0?chip(v,false,46):chip('+'+(rawTimes[i]-rawTimes[i-1]),true,10));
+    label='Delta: giá trị đầu + hiệu số';
+    note='Chỉ lưu <b>hiệu với dòng trước</b>: [1000, +1, +1, …] → số nhỏ lặp lại, nén rất tốt.';
+  }else{
+    const d=rawTimes.map((v,i)=>i===0?v:rawTimes[i]-rawTimes[i-1]);
+    stored=d.map((v,i)=>{
+      if(i===0)return chip(v,false,46);
+      if(i===1)return chip('+'+v,true,10);
+      return chip('+'+(d[i]-d[i-1]),true,6);
+    });
+    label='DoubleDelta: hiệu của hiệu';
+    note='Dãy đều đặn → hiệu-của-hiệu <b>toàn số 0</b> → nén gần như tuyệt đối. Codec chuẩn cho cột thời gian tăng đều.';
+  }
+  codecStored.innerHTML=stored.join('');
+  document.getElementById('codecStoredLabel').textContent=label;
+  say7(note);
+}
+document.querySelectorAll('#codecCtrl [data-c]').forEach(b=>b.onclick=()=>renderCodec(b.dataset.c));
+renderCodec('raw');
+
+/* ---------- MODULE 8: ReplacingMergeTree ---------- */
+let rmtVer=0, rmtData=[];
+const rmtUsers=[3,7,9], rmtStatus=['active','idle','banned','vip'];
+const rmtRows=document.getElementById('rmtRows'), narr8=document.getElementById('narr8');
+function say8(h){narr8.innerHTML='<span class="tick">›</span><span>'+h+'</span>';}
+function renderRmt(){
+  if(rmtData.length===0){rmtRows.innerHTML='<div class="empty-note">Trống. Bấm INSERT cập nhật user.</div>';return;}
+  const latest={};rmtData.forEach(r=>{if(latest[r.uid]==null||r.ver>latest[r.uid])latest[r.uid]=r.ver;});
+  rmtRows.innerHTML='';
+  rmtData.slice().sort((a,b)=>a.uid-b.uid||a.ver-b.ver).forEach(r=>{
+    const stale=r.ver<latest[r.uid];
+    const d=document.createElement('div');
+    d.className='row'+(stale?' stale':'');
+    d.innerHTML=`<span>user ${r.uid} · ${r.status}</span><span class="rt ver">v${r.ver}</span>`;
+    rmtRows.appendChild(d);
+  });
+}
+document.getElementById('rmtInsert').onclick=()=>{
+  rmtVer++;
+  const uid=rmtUsers[Math.floor(Math.random()*rmtUsers.length)];
+  const status=rmtStatus[Math.floor(Math.random()*rmtStatus.length)];
+  const had=rmtData.some(r=>r.uid===uid);
+  rmtData.push({uid,status,ver:rmtVer});
+  renderRmt();
+  say8(`INSERT: user ${uid} → '${status}' (v${rmtVer}). `+
+    (had?`User ${uid} giờ có <b>2 phiên bản</b> — bản cũ bị gạch (stale). Bấm <b>Merge</b> để dọn.`:'Chưa trùng ai. Cập nhật lại cùng user để thấy bản cũ bị thay.'));
+};
+document.getElementById('rmtMerge').onclick=()=>{
+  if(rmtData.length===0){say8('Chưa có gì để merge.');return;}
+  const m={};rmtData.forEach(r=>{if(!m[r.uid]||r.ver>m[r.uid].ver)m[r.uid]=r;});
+  const before=rmtData.length;
+  rmtData=Object.values(m);
+  renderRmt();
+  say8(`<b>Merge</b> → mỗi user chỉ giữ <b>version cao nhất</b>; ${before-rmtData.length} bản cũ bị xoá. Giống UPDATE nhưng làm lúc merge. (Đọc trước merge cần <code>FINAL</code>.)`);
+};
+document.getElementById('rmtReset').onclick=()=>{rmtVer=0;rmtData=[];renderRmt();say8('Đã reset.');};
+renderRmt();
+
+/* ---------- MODULE 9: skip index ---------- */
+const skipBlocks=[[0,600],[550,1200],[1180,1900],[1850,2600],[2550,3100],[3050,3800],[3750,4400],[4350,5000]];
+const skipRow=document.getElementById('skipRow'), narr9=document.getElementById('narr9');
+function say9(h){narr9.innerHTML='<span class="tick">›</span><span>'+h+'</span>';}
+function renderSkip(v){
+  skipRow.innerHTML='';let read=0;
+  skipBlocks.forEach((b,i)=>{
+    const hit = v!=null && v>=b[0] && v<=b[1];
+    if(v!=null&&hit)read++;
+    const d=document.createElement('div');
+    d.className='gran '+(v==null?'':(hit?'read':'skip'));
+    d.innerHTML=`<div class="gmark">khối ${i+1}</div><div class="grange">min ${b[0]}<br>max ${b[1]}</div>`;
+    skipRow.appendChild(d);
+  });
+  if(v==null)return;
+  const save=Math.round((1-read/8)*100);
+  document.getElementById('skRead').textContent=read;
+  document.getElementById('skSave').textContent=save+'%';
+  say9(`Tìm <b>user_id = ${v}</b>: skip index so với min/max từng khối → chỉ <b>${read}/8 khối</b> có thể chứa, ${8-read} khối bị loại ngay. Tiết kiệm <b>${save}%</b>. ⚠️ Nếu dữ liệu xáo trộn (khối nào min/max cũng rộng) thì skip index vô dụng.`);
+}
+document.querySelectorAll('#skipCtrl [data-v]').forEach(b=>b.onclick=()=>renderSkip(+b.dataset.v));
+renderSkip(null);
+
+/* ---------- MODULE 10: cluster ---------- */
+const nodes=[
+  {shard:1,role:'primary',name:'node-A',rows:0,down:false},
+  {shard:1,role:'replica',name:'node-B',rows:0,down:false},
+  {shard:2,role:'primary',name:'node-C',rows:0,down:false},
+  {shard:2,role:'replica',name:'node-D',rows:0,down:false},
+];
+let clTotal=0;
+const clusterEl=document.getElementById('cluster'), narr10=document.getElementById('narr10');
+function say10(h){narr10.innerHTML='<span class="tick">›</span><span>'+h+'</span>';}
+function renderCluster(hitShard,queryAll){
+  clusterEl.innerHTML='';
+  [1,2].forEach(s=>{
+    const sh=document.createElement('div');sh.className='shard';
+    sh.innerHTML=`<h4>Shard ${s}</h4>`;
+    nodes.filter(n=>n.shard===s).forEach(n=>{
+      const hit=!n.down && (queryAll || hitShard===s);
+      const d=document.createElement('div');
+      d.className='node '+(n.role==='primary'?'primary ':'')+(n.down?'down ':'')+(hit?'hit':'');
+      d.innerHTML=`<div>${n.name}</div><div class="nrole">${n.role}${n.down?' · HỎNG':''}</div><div class="ndata">${n.rows} dòng</div>`;
+      sh.appendChild(d);
+    });
+    clusterEl.appendChild(sh);
+  });
+}
+document.getElementById('clWrite').onclick=()=>{
+  clTotal++;
+  const s=(clTotal%2)+1;
+  nodes.filter(n=>n.shard===s).forEach(n=>{if(!n.down)n.rows++;});
+  renderCluster(s,false);
+  say10(`Ghi dòng #${clTotal} → sharding key băm vào <b>Shard ${s}</b> → ghi primary rồi <b>nhân bản sang replica</b> (cả 2 node cùng shard đều +1). Dữ liệu trải đều, không dồn một máy.`);
+};
+document.getElementById('clQuery').onclick=()=>{
+  renderCluster(null,true);
+  const total=nodes.filter(n=>n.role==='primary').reduce((s,n)=>s+n.rows,0);
+  say10(`Truy vấn qua bảng <b>Distributed</b> → <b>fan-out song song tới cả 2 shard</b>, mỗi shard tính phần của mình rồi gộp. Tổng ~${total} dòng. Càng nhiều shard, truy vấn càng nhanh.`);
+};
+document.getElementById('clFail').onclick=()=>{
+  const victim=nodes.find(n=>!n.down);
+  if(!victim){say10('Mọi node đã hỏng 😅 Bấm Reset.');return;}
+  victim.down=true;
+  renderCluster(null,false);
+  const twin=nodes.find(n=>n.shard===victim.shard&&n!==victim&&!n.down);
+  say10(`💥 <b>${victim.name}</b> hỏng. ${twin?`Nhưng <b>${twin.name}</b> (bản sao cùng shard) vẫn phục vụ → <b>không mất dữ liệu, không gián đoạn</b>.`:'Shard này giờ mất cả bản sao → phần dữ liệu đó tạm không đọc được (bài học: cần ≥1 replica sống mỗi shard).'} Đó là tác dụng của replication.`);
+};
+document.getElementById('clReset').onclick=()=>{clTotal=0;nodes.forEach(n=>{n.rows=0;n.down=false;});renderCluster(null,false);say10('Đã reset cluster.');};
+renderCluster(null,false);
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+version: 2
+
+# D4 · Kiểm thử
+#
+# Nhiệm vụ: thêm test cho các model. Bốn loại có sẵn của dbt:
+#   unique · not_null · accepted_values · relationships
+#
+# Đây chính là 4 câu query bạn tự viết tay ở phần C — dbt chỉ gói lại
+# thành một dòng khai báo. Chạy: dbt test
+#
+# TODO: bổ sung tests cho từng cột bên dưới
+
+models:
+  - name: stg_khach_hang
+    columns:
+      - name: ma_kh
+        description: "Khoá tự nhiên của khách hàng"
+        # TODO: ma_kh phải unique và not_null
+      - name: hang_thanh_vien
+        # TODO: chỉ được nhận bac / vang / kim_cuong
+
+  - name: fct_doanh_thu_ngay
+    columns:
+      - name: ngay
+        # TODO: unique + not_null

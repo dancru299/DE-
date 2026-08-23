@@ -1,0 +1,570 @@
+<title>Luồng dữ liệu: Kafka Connect (CDC) × Redpanda Connect</title>
+<style>
+  :root {
+    --bg: #eaeff1;
+    --surface: #ffffff;
+    --surface-2: #f4f8f9;
+    --ink: #0e1a20;
+    --ink-soft: #3d545f;
+    --muted: #6c8592;
+    --border: #d5e0e4;
+    --border-strong: #bccbd1;
+    --flow: #0a94a6;
+    --flow-bright: #0aa9bd;
+    --flow-wash: #dcf0f2;
+    --change: #c96a24;
+    --change-bright: #d9782f;
+    --change-wash: #f6e6d7;
+    --code-bg: #0c171d;
+    --code-ink: #cfe0e4;
+    --shadow: 0 1px 2px rgba(14,26,32,.05), 0 8px 24px -12px rgba(14,26,32,.18);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a1216;
+      --surface: #101d23;
+      --surface-2: #0d181e;
+      --ink: #dbe7ea;
+      --ink-soft: #9cb1ba;
+      --muted: #6e8791;
+      --border: #21333b;
+      --border-strong: #2c4149;
+      --flow: #34d3e6;
+      --flow-bright: #4fdcec;
+      --flow-wash: #0f2a30;
+      --change: #f0a25a;
+      --change-bright: #f4b072;
+      --change-wash: #2c1e12;
+      --code-bg: #060d11;
+      --code-ink: #cfe0e4;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a1216; --surface: #101d23; --surface-2: #0d181e; --ink: #dbe7ea;
+    --ink-soft: #9cb1ba; --muted: #6e8791; --border: #21333b; --border-strong: #2c4149;
+    --flow: #34d3e6; --flow-bright: #4fdcec; --flow-wash: #0f2a30;
+    --change: #f0a25a; --change-bright: #f4b072; --change-wash: #2c1e12;
+    --code-bg: #060d11; --code-ink: #cfe0e4;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"] {
+    --bg: #eaeff1; --surface: #ffffff; --surface-2: #f4f8f9; --ink: #0e1a20;
+    --ink-soft: #3d545f; --muted: #6c8592; --border: #d5e0e4; --border-strong: #bccbd1;
+    --flow: #0a94a6; --flow-bright: #0aa9bd; --flow-wash: #dcf0f2;
+    --change: #c96a24; --change-bright: #d9782f; --change-wash: #f6e6d7;
+    --code-bg: #0c171d; --code-ink: #cfe0e4;
+    --shadow: 0 1px 2px rgba(14,26,32,.05), 0 8px 24px -12px rgba(14,26,32,.18);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  .reading { max-width: 720px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--flow);
+    font-weight: 600;
+  }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.15; margin: 0; }
+  h1 { font-size: clamp(2.1rem, 5.5vw, 3.4rem); font-weight: 800; letter-spacing: -.025em; }
+  h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); font-weight: 750; letter-spacing: -.02em; }
+  h3 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.01em; }
+  p { margin: 0; }
+  .lead { font-size: 1.18rem; color: var(--ink-soft); }
+  .muted { color: var(--muted); }
+  code {
+    font-family: var(--mono);
+    font-size: .86em;
+    background: var(--flow-wash);
+    color: var(--flow);
+    padding: .1em .4em;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+
+  /* ---------- section rhythm ---------- */
+  section { padding: clamp(48px, 8vw, 88px) 0; border-top: 1px solid var(--border); }
+  section.hero { border-top: none; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 34px; }
+  .sec-num {
+    font-family: var(--mono); font-size: .8rem; font-weight: 600;
+    color: var(--flow); border: 1px solid var(--border-strong);
+    border-radius: 999px; padding: 2px 10px; white-space: nowrap;
+    background: var(--surface);
+  }
+
+  /* ---------- hero ---------- */
+  .hero { padding-top: clamp(56px, 9vw, 104px); }
+  .hero h1 { margin: 18px 0 0; }
+  .hero .kx { color: var(--muted); font-weight: 400; }
+  .hero .lead { margin-top: 22px; max-width: 640px; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .pill {
+    font-family: var(--mono); font-size: .74rem; letter-spacing: .04em;
+    padding: 7px 13px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-soft); display: inline-flex; gap: 8px; align-items: center;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .dot.flow { background: var(--flow); }
+  .dot.change { background: var(--change); }
+
+  /* ---------- role cards ---------- */
+  .grid { display: grid; gap: 16px; }
+  .roles { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px; box-shadow: var(--shadow);
+  }
+  .card .tag {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .12em;
+    text-transform: uppercase; font-weight: 600; display: inline-block; margin-bottom: 12px;
+    padding: 3px 8px; border-radius: 6px;
+  }
+  .tag.flow { background: var(--flow-wash); color: var(--flow); }
+  .tag.change { background: var(--change-wash); color: var(--change); }
+  .card h3 { margin-bottom: 7px; }
+  .card p { font-size: .93rem; color: var(--ink-soft); }
+  .callout {
+    margin-top: 22px; display: flex; gap: 13px; align-items: flex-start;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-left: 3px solid var(--flow); border-radius: 10px; padding: 16px 18px;
+    font-size: .95rem; color: var(--ink-soft);
+  }
+  .callout b { color: var(--ink); }
+
+  /* ---------- flow diagram ---------- */
+  .diagram-scroll { overflow-x: auto; padding: 8px 4px 18px; margin: 0 -4px; }
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0; min-width: 880px;
+  }
+  .station {
+    flex: 1 1 0; min-width: 150px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 13px; padding: 16px 15px;
+    box-shadow: var(--shadow); position: relative;
+  }
+  .station.change-node { border-color: color-mix(in srgb, var(--change) 45%, var(--border)); }
+  .station.flow-node { border-color: color-mix(in srgb, var(--flow) 40%, var(--border)); }
+  .station.out-node { border-style: dashed; }
+  .station .kind {
+    font-family: var(--mono); font-size: .64rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+  }
+  .station .name { font-weight: 750; font-size: 1.02rem; margin: 7px 0 6px; letter-spacing: -.01em; }
+  .station .role { font-size: .82rem; color: var(--ink-soft); line-height: 1.5; }
+  .station .glyph {
+    position: absolute; top: 14px; right: 14px; width: 26px; height: 26px;
+    display: grid; place-items: center; border-radius: 7px; font-family: var(--mono);
+    font-size: .8rem; font-weight: 700;
+  }
+  .glyph.change { background: var(--change-wash); color: var(--change); }
+  .glyph.flow { background: var(--flow-wash); color: var(--flow); }
+
+  .connector {
+    flex: 0 0 88px; align-self: center; position: relative; height: 3px;
+    background: linear-gradient(90deg, var(--border-strong), var(--border-strong));
+    border-radius: 3px; margin: 0 -1px;
+  }
+  .connector .step {
+    position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: .62rem; font-weight: 700;
+    color: var(--flow); background: var(--surface); border: 1px solid var(--border);
+    border-radius: 999px; width: 20px; height: 20px; display: grid; place-items: center;
+  }
+  .connector .lbl {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: .58rem; letter-spacing: .03em;
+    color: var(--muted); white-space: nowrap; text-align: center;
+  }
+  .packet {
+    position: absolute; top: 50%; width: 9px; height: 9px; border-radius: 50%;
+    margin-top: -4.5px; box-shadow: 0 0 8px 1px currentColor;
+  }
+  .packet.change { color: var(--change); background: var(--change-bright); }
+  .packet.flow { color: var(--flow); background: var(--flow-bright); }
+  @keyframes travel { from { left: -3%; } to { left: 103%; } }
+  .packet { animation: travel 2.4s linear infinite; }
+  .packet.d2 { animation-delay: .8s; }
+  .packet.d3 { animation-delay: 1.6s; }
+
+  .diagram-legend {
+    display: flex; flex-wrap: wrap; gap: 20px; margin-top: 8px;
+    font-family: var(--mono); font-size: .72rem; color: var(--muted);
+  }
+  .diagram-legend span { display: inline-flex; align-items: center; gap: 8px; }
+
+  /* ---------- compare (code vs config) ---------- */
+  .compare { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .compare .card { padding: 0; overflow: hidden; }
+  .compare .head {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .compare .head .tag { margin: 0; }
+  .compare .body { padding: 6px 20px 18px; }
+  .row { padding: 15px 0; border-bottom: 1px dashed var(--border); }
+  .row:last-child { border-bottom: none; }
+  .row .what { font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .row .how { margin-top: 5px; font-size: .95rem; color: var(--ink); }
+  .row .how b { color: var(--flow); }
+
+  /* ---------- CDC mechanism ---------- */
+  .cdc { display: grid; grid-template-columns: 1.1fr .9fr; gap: 24px; align-items: start; }
+  .log-visual {
+    background: var(--code-bg); border-radius: 14px; padding: 20px; color: var(--code-ink);
+    font-family: var(--mono); font-size: .8rem; box-shadow: var(--shadow); overflow-x: auto;
+  }
+  .log-visual .title { color: var(--muted); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 14px; }
+  .log-line { display: flex; gap: 10px; padding: 5px 0; white-space: nowrap; align-items: center; }
+  .op { font-weight: 700; border-radius: 5px; padding: 1px 7px; font-size: .72rem; flex: none; }
+  .op.c { background: rgba(52,211,153,.16); color: #4ade80; }
+  .op.u { background: rgba(96,165,250,.16); color: #7dd3fc; }
+  .op.d { background: rgba(248,113,113,.16); color: #fb7185; }
+  .op.r { background: rgba(148,163,184,.16); color: #cbd5e1; }
+  .log-line .txt { color: var(--code-ink); opacity: .82; overflow: hidden; text-overflow: ellipsis; }
+  .why-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+  .why-list li { display: flex; gap: 13px; align-items: flex-start; }
+  .why-list .mk {
+    flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    background: var(--change-wash); color: var(--change); font-family: var(--mono); font-weight: 700; font-size: .85rem;
+  }
+  .why-list h3 { font-size: .98rem; }
+  .why-list p { font-size: .9rem; color: var(--ink-soft); margin-top: 2px; }
+
+  /* ---------- redpanda triptych ---------- */
+  .triptych { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); align-items: stretch; }
+  .stage { position: relative; }
+  .stage .step-tag {
+    font-family: var(--mono); font-size: .66rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--flow); font-weight: 600; margin-bottom: 8px;
+  }
+  .arrow-note { text-align: center; font-family: var(--mono); font-size: .8rem; color: var(--muted); margin: 22px 0 0; }
+  pre {
+    background: var(--code-bg); color: var(--code-ink); border-radius: 12px;
+    padding: 18px 20px; overflow-x: auto; font-family: var(--mono); font-size: .82rem;
+    line-height: 1.6; margin: 22px 0 0; box-shadow: var(--shadow);
+  }
+  pre .k { color: var(--flow-bright); }
+  pre .s { color: #f0a25a; }
+  pre .c { color: var(--muted); }
+
+  /* ---------- lab / next ---------- */
+  .lab-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: clamp(24px, 4vw, 38px); box-shadow: var(--shadow);
+  }
+  .phase-grid { grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  .phase { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .phase .n { font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; color: var(--flow); font-weight: 600; }
+  .phase h3 { margin: 6px 0 8px; }
+  .phase p { font-size: .9rem; color: var(--ink-soft); }
+
+  footer { padding: 40px 0 60px; border-top: 1px solid var(--border); color: var(--muted); font-size: .84rem; font-family: var(--mono); }
+
+  a { color: var(--flow); }
+  :focus-visible { outline: 2px solid var(--flow); outline-offset: 3px; border-radius: 4px; }
+
+  @media (max-width: 760px) {
+    .compare, .cdc, .phase-grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .packet { animation: none; left: 50% !important; }
+    .packet.d2, .packet.d3 { display: none; }
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="eyebrow">Luồng dữ liệu · CDC + Stream Processing</p>
+    <h1>Kafka Connect <span class="kx">×</span> Redpanda&nbsp;Connect</h1>
+    <p class="lead">Cùng một việc "di chuyển và biến đổi dữ liệu" mà bạn đã <b>tự viết Python</b> trong dự án shop — giờ được làm bằng <b>cấu hình, không cần code</b>. Đây là bản đồ luồng để hiểu trước khi bắt tay.</p>
+    <div class="pill-row">
+      <span class="pill"><span class="dot change"></span>Hổ phách = thay đổi trong database (CDC)</span>
+      <span class="pill"><span class="dot flow"></span>Cyan = dòng stream trong Kafka</span>
+    </div>
+  </section>
+
+  <!-- 1. ROLES -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2>Mỗi công cụ một việc</h2>
+    </div>
+    <div class="grid roles">
+      <div class="card">
+        <span class="tag flow">Streaming platform</span>
+        <h3>Kafka</h3>
+        <p>Đường ống trung tâm — nơi mọi dữ liệu chảy qua. Chính là thứ bạn đã học ở dự án shop.</p>
+      </div>
+      <div class="card">
+        <span class="tag flow">Integration framework</span>
+        <h3>Kafka Connect</h3>
+        <p>Đưa dữ liệu <b>vào / ra</b> Kafka mà không cần viết code. Chỉ nộp một file cấu hình JSON.</p>
+      </div>
+      <div class="card">
+        <span class="tag change">Connector · Debezium</span>
+        <h3>CDC</h3>
+        <p>Bắt mọi thay đổi trong <b>database</b> (thêm/sửa/xoá) rồi đẩy vào Kafka — ngay lúc nó xảy ra.</p>
+      </div>
+      <div class="card">
+        <span class="tag flow">Stream processing</span>
+        <h3>Redpanda Connect</h3>
+        <p>Đọc stream, <b>lọc · biến đổi · định tuyến</b> bằng YAML. Chính là Benthos đổi tên.</p>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="dot flow" style="margin-top:8px"></span>
+      <div><b>Điểm dễ nhầm:</b> Kafka Connect rộng hơn CDC. Nó là cái <i>khung</i>; còn CDC chỉ là một <i>ứng dụng cụ thể</i> chạy trên khung đó, thực hiện bởi connector tên <code>Debezium</code>. Lead nói "Kafka Connect dùng để CDC" vì CDC là việc chính công ty bạn dùng nó.</div>
+    </div>
+  </section>
+
+  <!-- 2. FLOW DIAGRAM -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2>Luồng dữ liệu, từ đầu tới cuối</h2>
+    </div>
+    <p class="reading muted" style="margin:-14px 0 26px; font-size:.98rem">Một thay đổi trong Postgres chảy qua từng chặng tới đích. Kéo ngang để xem trọn pipeline.</p>
+
+    <div class="diagram-scroll">
+      <div class="pipeline">
+
+        <div class="station change-node">
+          <span class="glyph change">DB</span>
+          <div class="kind">Nguồn gốc</div>
+          <div class="name">PostgreSQL</div>
+          <div class="role">Ứng dụng web ghi vào đây như bình thường (bảng orders…).</div>
+        </div>
+
+        <div class="connector" aria-hidden="true">
+          <span class="step">1</span>
+          <span class="lbl">đọc WAL</span>
+          <span class="packet change"></span>
+          <span class="packet change d2"></span>
+          <span class="packet change d3"></span>
+        </div>
+
+        <div class="station flow-node">
+          <span class="glyph flow">KC</span>
+          <div class="kind">Kafka Connect · source</div>
+          <div class="name">Debezium</div>
+          <div class="role">Bắt mọi INSERT/UPDATE/DELETE. Chỉ 1 file config, 0 dòng code.</div>
+        </div>
+
+        <div class="connector" aria-hidden="true">
+          <span class="step">2</span>
+          <span class="lbl">1 thay đổi → 1 message</span>
+          <span class="packet flow"></span>
+          <span class="packet flow d2"></span>
+          <span class="packet flow d3"></span>
+        </div>
+
+        <div class="station flow-node">
+          <span class="glyph flow">≡</span>
+          <div class="kind">Kafka topic</div>
+          <div class="name">orders (thô)</div>
+          <div class="role">Mỗi bảng → một topic. Event CDC gốc, khá dài dòng.</div>
+        </div>
+
+        <div class="connector" aria-hidden="true">
+          <span class="step">3</span>
+          <span class="lbl">lọc · biến đổi</span>
+          <span class="packet flow"></span>
+          <span class="packet flow d2"></span>
+          <span class="packet flow d3"></span>
+        </div>
+
+        <div class="station flow-node">
+          <span class="glyph flow">RC</span>
+          <div class="kind">Stream processing</div>
+          <div class="name">Redpanda Connect</div>
+          <div class="role">input → pipeline → output. Rút gọn, làm giàu, định tuyến bằng YAML.</div>
+        </div>
+
+        <div class="connector" aria-hidden="true">
+          <span class="step">4</span>
+          <span class="lbl">ghi ra đích</span>
+          <span class="packet flow"></span>
+          <span class="packet flow d2"></span>
+          <span class="packet flow d3"></span>
+        </div>
+
+        <div class="station out-node">
+          <span class="glyph flow">→</span>
+          <div class="kind">Đích đến</div>
+          <div class="name">Topic sạch · ES · DB</div>
+          <div class="role">Dữ liệu gọn gàng cho hệ thống khác dùng: tìm kiếm, phân tích…</div>
+        </div>
+
+      </div>
+    </div>
+    <div class="diagram-legend">
+      <span><span class="dot change"></span> change event (từ database)</span>
+      <span><span class="dot flow"></span> stream message (trong Kafka)</span>
+    </div>
+  </section>
+
+  <!-- 3. CONFIG VS CODE -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2>Config thay vì code</h2>
+    </div>
+    <p class="reading muted" style="margin:-14px 0 26px; font-size:.98rem">Chìa khoá để "thấm": hai công cụ này làm đúng những việc bạn đã code tay ở dự án shop — nhưng bằng khai báo.</p>
+    <div class="grid compare">
+      <div class="card">
+        <div class="head"><span class="tag change">Dự án shop · bạn code</span></div>
+        <div class="body">
+          <div class="row">
+            <div class="what">Đưa dữ liệu vào Kafka</div>
+            <div class="how">Tự viết <b>order_api.py</b> để produce từng message.</div>
+          </div>
+          <div class="row">
+            <div class="what">Xử lý / biến đổi stream</div>
+            <div class="how">Tự viết <b>payment_service.py</b> consume + xử lý + produce tiếp.</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="head"><span class="tag flow">Ngoài đời · khai báo</span></div>
+        <div class="body">
+          <div class="row">
+            <div class="what">Đưa dữ liệu vào Kafka</div>
+            <div class="how"><b>Kafka Connect + Debezium</b> tự bắt thay đổi từ database.</div>
+          </div>
+          <div class="row">
+            <div class="what">Xử lý / biến đổi stream</div>
+            <div class="how"><b>Redpanda Connect</b> — một file YAML input → pipeline → output.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="dot flow" style="margin-top:8px"></span>
+      <div>Ý tưởng lớn: những mẫu di chuyển & biến đổi dữ liệu phổ biến đã được <b>đóng gói sẵn</b>. Bạn <b>khai báo</b> thay vì <b>lập trình</b> — nhanh hơn, ít bug hơn, dễ vận hành hơn.</div>
+    </div>
+  </section>
+
+  <!-- 4. CDC MECHANISM -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <h2>Phần "ảo diệu": CDC đọc lén nhật ký</h2>
+    </div>
+    <div class="cdc">
+      <div class="log-visual" aria-hidden="true">
+        <div class="title">postgres · write-ahead log (WAL)</div>
+        <div class="log-line"><span class="op r">r</span><span class="txt">snapshot · orders#101 · {id, total, status}</span></div>
+        <div class="log-line"><span class="op c">c</span><span class="txt">INSERT · orders#102 · after={total: 550000}</span></div>
+        <div class="log-line"><span class="op u">u</span><span class="txt">UPDATE · orders#102 · status: NEW → PAID</span></div>
+        <div class="log-line"><span class="op c">c</span><span class="txt">INSERT · orders#103 · after={total: 150000}</span></div>
+        <div class="log-line"><span class="op d">d</span><span class="txt">DELETE · orders#101 · before={…}</span></div>
+        <div class="log-line" style="margin-top:10px; opacity:.6"><span class="txt">↑ Debezium đọc từng dòng này, biến thành message Kafka</span></div>
+      </div>
+      <div>
+        <p class="reading" style="margin-bottom:22px; color:var(--ink-soft)">Database nào cũng có cuốn "nhật ký giao dịch" ghi lại mọi thay đổi trước khi áp vào bảng — Postgres gọi là <code>WAL</code>, MySQL gọi là <code>binlog</code>. Debezium đọc lén cuốn này. Trường <code>op</code> cho biết loại thao tác: <b>c</b>reate · <b>u</b>pdate · <b>d</b>elete · <b>r</b>ead.</p>
+        <ul class="why-list">
+          <li>
+            <span class="mk">⚡</span>
+            <div><h3>Real-time</h3><p>Thay đổi vừa xảy ra là bắt được ngay — không phải hỏi dồn dập kiểu polling.</p></div>
+          </li>
+          <li>
+            <span class="mk">✕</span>
+            <div><h3>Bắt được cả DELETE</h3><p>Điều mà cách chạy <code>SELECT</code> định kỳ không bao giờ thấy.</p></div>
+          </li>
+          <li>
+            <span class="mk">≈</span>
+            <div><h3>Nhẹ cho database</h3><p>Chỉ đọc log, không quét bảng — gần như không tạo tải.</p></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. REDPANDA CONNECT -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">05</span>
+      <h2>Redpanda Connect: input → pipeline → output</h2>
+    </div>
+    <p class="reading muted" style="margin:-14px 0 26px; font-size:.98rem">Mọi cấu hình đều có đúng ba phần. Đọc từ đâu, làm gì với dữ liệu, ghi đi đâu.</p>
+    <div class="grid triptych">
+      <div class="card stage">
+        <div class="step-tag">input</div>
+        <h3>Đọc từ đâu</h3>
+        <p style="font-size:.9rem;color:var(--ink-soft);margin-top:6px">Kafka topic <code>orders</code> (event CDC thô). Cũng có thể là file, HTTP, hàng trăm nguồn khác.</p>
+      </div>
+      <div class="card stage">
+        <div class="step-tag">pipeline · processors</div>
+        <h3>Làm gì với dữ liệu</h3>
+        <p style="font-size:.9rem;color:var(--ink-soft);margin-top:6px">Lọc, đổi định dạng, thêm/bớt trường, tính toán — bằng ngôn ngữ map nhỏ tên <b>Bloblang</b>.</p>
+      </div>
+      <div class="card stage">
+        <div class="step-tag">output</div>
+        <h3>Ghi đi đâu</h3>
+        <p style="font-size:.9rem;color:var(--ink-soft);margin-top:6px">Topic <code>orders.clean</code>, hoặc Elasticsearch, DB phân tích, API… tuỳ đích cần.</p>
+      </div>
+    </div>
+<pre><span class="c"># rút gọn event CDC dài dòng của Debezium còn vài trường cần thiết</span>
+<span class="k">input</span>:
+  <span class="k">kafka</span>:
+    <span class="k">topics</span>: [ <span class="s">orders</span> ]
+
+<span class="k">pipeline</span>:
+  <span class="k">processors</span>:
+    - <span class="k">mapping</span>: |
+        <span class="c"># Bloblang: chỉ giữ id, khách, tiền, thao tác</span>
+        root.order_id = this.after.id
+        root.khach    = this.after.customer
+        root.tien     = this.after.total
+        root.thao_tac = this.op          <span class="c"># c / u / d</span>
+
+<span class="k">output</span>:
+  <span class="k">kafka</span>:
+    <span class="k">topic</span>: <span class="s">orders.clean</span></pre>
+    <p class="arrow-note">event thô nhiều chục dòng &nbsp;→&nbsp; 4 trường gọn gàng cho hệ thống khác dùng</p>
+  </section>
+
+  <!-- 6. LAB / NEXT -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">06</span>
+      <h2>Lab bạn sẽ dựng</h2>
+    </div>
+    <div class="lab-card">
+      <p class="lead" style="font-size:1.1rem">Một pipeline hoàn chỉnh bằng Docker — không viết một dòng Java/Python nào. Bạn <code>INSERT</code> một dòng vào Postgres và <b>nhìn thấy</b> nó chảy qua từng chặng tới đích, real-time.</p>
+      <div class="grid phase-grid">
+        <div class="phase">
+          <div class="n">Giai đoạn 1</div>
+          <h3>Nửa CDC (phần "wow")</h3>
+          <p>Postgres + Kafka Connect + Debezium. Sửa DB bằng SQL → thấy event xuất hiện trong Kafka topic ngay lập tức.</p>
+        </div>
+        <div class="phase">
+          <div class="n">Giai đoạn 2</div>
+          <h3>Nửa xử lý</h3>
+          <p>Thêm Redpanda Connect đọc topic đó, biến đổi bằng Bloblang, ghi ra topic sạch. Khép kín pipeline.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap" style="padding-left:0;padding-right:0">
+    kafka-connect × redpanda-connect · bản đồ luồng để học · hiểu luồng trước, code sau
+  </footer>
+
+</div>

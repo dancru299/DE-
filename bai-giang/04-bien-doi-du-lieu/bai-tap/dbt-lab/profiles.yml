@@ -1,0 +1,9 @@
+# Bình thường profiles.yml nằm ở ~/.dbt/. Để đây cho lab tự chứa,
+# nên khi chạy phải thêm cờ:  --profiles-dir .
+de_lab:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../de.duckdb      # dùng chung database với phần bài tập SQL
+      threads: 4

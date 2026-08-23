@@ -1,0 +1,7 @@
+customer_id,full_name,email,city,updated_at
+C001,Nguyen Van An,an.nv@example.com,Ha Noi,2026-07-20 09:00:00
+C002,Tran Thi Binh,binh.tt@example.com,Da Nang,2026-07-20 09:00:00
+C003,Le Hoang Cuong,cuong.lh@example.com,Ho Chi Minh,2026-07-21 10:30:00
+C004,Pham Minh Dung,dung.pm@example.com,Nha Trang,2026-07-22 08:15:00
+C005,Vo Thi Em,em.vt@example.com,Ha Noi,2026-07-25 14:00:00
+C006,Dang Quoc Phong,phong.dq@example.com,Hai Phong,2026-07-28 16:45:00

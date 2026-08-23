@@ -1,0 +1,726 @@
+<title>SQL Cho Data Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --paper:#EFEFF2; --card:#FAFAFC; --ink:#16151F; --ink-2:#5C5A70; --line:#D6D5DE;
+  --accent:#5A34B8; --accent-soft:rgba(90,52,184,.09);
+  --bad:#AE3247; --bad-soft:rgba(174,50,71,.09);
+  --ok:#1B7350;  --ok-soft:rgba(27,115,80,.09);
+  --code-bg:#131120; --code-ink:#E4E1F0; --code-line:#282438; --code-dim:#7E78A0;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0C0B12; --card:#16151E; --ink:#E9E7F1; --ink-2:#948FA8; --line:#262433;
+  --accent:#A78CFF; --accent-soft:rgba(167,140,255,.13);
+  --bad:#F08292; --bad-soft:rgba(240,130,146,.12);
+  --ok:#4FD19B;  --ok-soft:rgba(79,209,155,.12);
+  --code-bg:#08070E; --code-ink:#E4E1F0; --code-line:#211E30; --code-dim:#7E78A0;
+}}
+:root[data-theme="dark"]{
+  --paper:#0C0B12; --card:#16151E; --ink:#E9E7F1; --ink-2:#948FA8; --line:#262433;
+  --accent:#A78CFF; --accent-soft:rgba(167,140,255,.13);
+  --bad:#F08292; --bad-soft:rgba(240,130,146,.12);
+  --ok:#4FD19B;  --ok-soft:rgba(79,209,155,.12);
+  --code-bg:#08070E; --code-ink:#E4E1F0; --code-line:#211E30; --code-dim:#7E78A0;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);margin:0;
+  font-family:"Be Vietnam Pro","Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.72;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px 96px}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.lab{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.67rem;
+  letter-spacing:.15em;text-transform:uppercase;font-weight:500}
+
+/* hero */
+.hero{padding:74px 0 38px;border-bottom:2px solid var(--ink)}
+.hero .lab{color:var(--accent);display:block;margin-bottom:20px}
+.hero h1{font-family:"JetBrains Mono",monospace;font-weight:800;letter-spacing:-.05em;
+  line-height:1.02;font-size:clamp(2.1rem,6.4vw,3.9rem);margin:0 0 22px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.dek{font-size:clamp(1.04rem,2.3vw,1.24rem);color:var(--ink-2);max-width:62ch;margin:0 0 30px}
+.facts{display:flex;flex-wrap:wrap;gap:12px 30px}
+.fact{display:flex;flex-direction:column;gap:1px}
+.fact span:first-child{font-family:"JetBrains Mono",monospace;font-size:.64rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-2)}
+.fact span:last-child{font-weight:600;font-size:.95rem}
+
+/* sections */
+.sec{display:grid;grid-template-columns:92px 1fr;gap:0 32px;padding:50px 0;border-bottom:1px solid var(--line)}
+.sec:last-of-type{border-bottom:none}
+.rail{padding-top:.45rem}
+.rail .n{font-family:"JetBrains Mono",monospace;font-weight:800;font-size:1.35rem;
+  line-height:1;color:var(--accent);display:block}
+.rail .ex{font-family:"JetBrains Mono",monospace;font-size:.6rem;letter-spacing:.06em;
+  color:var(--ink-2);display:block;margin-top:9px;line-height:1.5;
+  border-left:2px solid var(--accent);padding-left:7px}
+.sec h2{font-family:"JetBrains Mono",monospace;font-weight:700;letter-spacing:-.04em;
+  line-height:1.16;font-size:clamp(1.35rem,3.4vw,1.92rem);margin:0 0 18px;text-wrap:balance}
+.sec h3{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:1rem;
+  letter-spacing:-.03em;margin:32px 0 10px}
+.sec p{margin:0 0 16px;max-width:66ch}
+.body-col{min-width:0}
+.body-col>*:first-child{margin-top:0}
+strong{font-weight:600}
+@media (max-width:800px){
+  .sec{grid-template-columns:1fr}
+  .rail{padding-top:0;margin-bottom:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .rail .n{font-size:1.05rem}
+  .rail .ex{margin-top:0}
+}
+
+/* callout */
+.tip{border-left:3px solid var(--accent);background:var(--accent-soft);padding:16px 20px;
+  margin:24px 0;border-radius:0 3px 3px 0;max-width:66ch}
+.tip .lab{color:var(--accent);display:block;margin-bottom:6px}
+.tip p{margin:0}.tip p+p{margin-top:10px}
+.tip.warn{border-left-color:var(--bad);background:var(--bad-soft)}
+.tip.warn .lab{color:var(--bad)}
+
+/* code */
+.code{background:var(--code-bg);color:var(--code-ink);border:1px solid var(--code-line);
+  border-radius:5px;margin:20px 0;overflow:hidden}
+.code-bar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--code-line);
+  font-family:"JetBrains Mono",monospace;font-size:.66rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--code-dim)}
+.code-bar::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none;opacity:.8}
+.code.bad .code-bar{color:var(--bad)}.code.bad .code-bar::before{background:var(--bad)}
+.code.good .code-bar{color:var(--ok)}.code.good .code-bar::before{background:var(--ok)}
+.code pre{margin:0;padding:15px 17px;overflow-x:auto;
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.83rem;line-height:1.7}
+.c{color:var(--code-dim)}.k{color:#B9A0FF}.s{color:#8FD8B4}.f{color:#F2B07A}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+.pair .code{margin:0;min-width:0}
+@media (max-width:820px){.pair{grid-template-columns:1fr}}
+code:not(pre code){font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.83em;
+  background:var(--accent-soft);color:var(--accent);padding:.12em .38em;border-radius:3px}
+
+/* table */
+.table-scroll{overflow-x:auto;margin:20px 0;border:1px solid var(--line);border-radius:5px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.92rem}
+th{text-align:left;font-family:"JetBrains Mono",monospace;font-size:.63rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink-2);padding:11px 15px;border-bottom:1px solid var(--line);font-weight:500}
+td{padding:10px 15px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.m{white-space:nowrap;font-family:"JetBrains Mono",monospace;font-size:.8rem;color:var(--accent)}
+
+/* lists */
+ul.plain{list-style:none;padding:0;margin:18px 0;max-width:66ch;display:flex;flex-direction:column;gap:12px}
+ul.plain li{padding-left:24px;position:relative}
+ul.plain li::before{content:"";position:absolute;left:0;top:.66em;width:9px;height:2px;background:var(--accent)}
+ol.steps{padding-left:0;list-style:none;counter-reset:s;max-width:66ch;display:flex;flex-direction:column;gap:16px;margin:20px 0}
+ol.steps li{counter-increment:s;padding-left:36px;position:relative}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:.1em;width:23px;height:23px;
+  border:1.5px solid var(--accent);color:var(--accent);border-radius:3px;
+  font-family:"JetBrains Mono",monospace;font-size:.72rem;display:flex;align-items:center;justify-content:center}
+
+/* closing */
+.closing{margin-top:52px;background:var(--code-bg);color:var(--code-ink);border-radius:6px;padding:38px 32px}
+.closing h2{font-family:"JetBrains Mono",monospace;font-weight:800;letter-spacing:-.04em;
+  font-size:clamp(1.4rem,3.6vw,1.9rem);margin:0 0 8px;color:var(--code-ink)}
+.closing .lab{color:var(--accent);display:block;margin-bottom:14px}
+.closing p{color:var(--code-dim);max-width:62ch;margin:0}
+.recall{display:grid;grid-template-columns:repeat(auto-fit,minmax(182px,1fr));gap:1px;margin-top:24px;background:var(--code-line)}
+.recall div{background:var(--code-bg);padding:15px 17px}
+.recall b{display:block;font-family:"JetBrains Mono",monospace;color:var(--accent);font-size:.64rem;
+  letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;font-weight:500}
+.recall span{font-size:.9rem;line-height:1.6;color:var(--code-ink)}
+::selection{background:var(--accent);color:var(--paper)}
+a{color:var(--accent)}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <span class="lab">Bài giảng · Tầng 4 · Biến đổi dữ liệu</span>
+  <h1>SQL cho <em>data engineer</em></h1>
+  <p class="dek">Analyst viết SQL để trả lời một câu hỏi. Data engineer viết SQL để nó tự chạy 365 ngày một năm mà không ai nhìn. Bài này dạy phần khác nhau đó — và bộ bài tập đi kèm chạy được ngay trên máy bạn.</p>
+  <div class="facts">
+    <div class="fact"><span>Thời lượng</span><span>~40 phút đọc</span></div>
+    <div class="fact"><span>Bài tập</span><span>25 bài SQL + 7 bài dbt</span></div>
+    <div class="fact"><span>Cần chuẩn bị</span><span>DuckDB (đã có sẵn)</span></div>
+    <div class="fact"><span>Bắt đầu luyện</span><span>bai-tap/chay.sh</span></div>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="rail"><span class="n">01</span><span class="ex">Luyện: A1–A6</span></div>
+  <div class="body-col">
+    <h2>SQL cơ bản — chỉ nói qua</h2>
+    <p>Bạn đã biết <code>SELECT</code>, <code>WHERE</code>, <code>GROUP BY</code>, <code>JOIN</code>. Tôi sẽ không dạy lại. Nhưng có <strong>một thứ</strong> từ phần cơ bản mà rất nhiều người dùng SQL nhiều năm vẫn chưa nắm chắc, và nó là gốc rễ của hàng loạt lỗi về sau: <strong>thứ tự thực thi thật sự</strong>.</p>
+    <p>SQL được <em>viết</em> theo một thứ tự nhưng được <em>chạy</em> theo thứ tự khác hẳn:</p>
+    <div class="code">
+      <div class="code-bar">thứ tự chạy thật</div>
+      <pre><span class="c">viết:</span>  SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY
+
+<span class="c">chạy:</span>  FROM      <span class="c">-- lấy bảng, nối bảng</span>
+       WHERE     <span class="c">-- lọc từng DÒNG THÔ</span>
+       GROUP BY  <span class="c">-- gom nhóm</span>
+       HAVING    <span class="c">-- lọc từng NHÓM</span>
+       WINDOW    <span class="c">-- tính hàm cửa sổ</span>
+       QUALIFY   <span class="c">-- lọc theo kết quả hàm cửa sổ</span>
+       SELECT    <span class="c">-- mới tới lượt chọn cột và đặt bí danh</span>
+       ORDER BY  <span class="c">-- sắp xếp cuối cùng</span></pre>
+    </div>
+    <p>Ba hệ quả rút ra ngay, và chúng giải thích gần hết lỗi cú pháp bạn từng gặp:</p>
+    <ul class="plain">
+      <li><strong>Không dùng được bí danh của <code>SELECT</code> trong <code>WHERE</code></strong> — vì lúc <code>WHERE</code> chạy thì <code>SELECT</code> còn chưa tới lượt, bí danh chưa tồn tại.</li>
+      <li><strong><code>WHERE</code> lọc dòng, <code>HAVING</code> lọc nhóm.</strong> Muốn lọc theo <code>sum()</code> thì bắt buộc dùng <code>HAVING</code>.</li>
+      <li><strong>Không lọc được hàm cửa sổ bằng <code>WHERE</code></strong> — cửa sổ chạy sau. Phải bọc thêm một tầng, hoặc dùng <code>QUALIFY</code> (phần 04).</li>
+    </ul>
+    <div class="tip">
+      <span class="lab">Ba cái bẫy cơ bản nhưng gây thiệt hại thật</span>
+      <p><strong>NULL không bằng NULL.</strong> <code>NULL = NULL</code> cho ra <code>NULL</code>, không phải <code>true</code>. So sánh phải dùng <code>IS NULL</code>.</p>
+      <p><strong><code>count(*)</code> khác <code>count(cot)</code>.</strong> <code>count(*)</code> đếm dòng; <code>count(cot)</code> bỏ qua NULL. Sau <code>LEFT JOIN</code>, dùng nhầm là ra số 1 thay vì 0.</p>
+      <p><strong>JOIN có thể nhân dòng.</strong> Nối vào một bảng có nhiều dòng trùng khoá thì số dòng phình lên, và mọi <code>sum()</code> phía sau đều sai — mà không có lỗi nào báo cả.</p>
+    </div>
+    <p>Chỉ vậy thôi. Từ phần sau trở đi là thứ đáng học kỹ.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">02</span></div>
+  <div class="body-col">
+    <h2>SQL của DE khác SQL của analyst chỗ nào</h2>
+    <p>Analyst viết một câu query, nhìn kết quả, trả lời câu hỏi, đóng cửa sổ. Nếu query sai, họ thấy ngay vì đang nhìn kết quả.</p>
+    <p>DE viết một câu query rồi <strong>giao nó cho một cái máy chạy mỗi đêm trong hai năm</strong>. Không ai nhìn kết quả. Dữ liệu đầu vào thì đổi hình dạng liên tục. Bốn yêu cầu tăng thêm:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th></th><th>Analyst</th><th>Data engineer</th></tr></thead>
+        <tbody>
+          <tr><td class="m">Chạy</td><td>Một lần, có người nhìn</td><td>Ngàn lần, không ai nhìn</td></tr>
+          <tr><td class="m">Chạy lại</td><td>Không sao, chỉ tốn thời gian</td><td><strong>Phải ra kết quả y hệt</strong>, không được nhân đôi</td></tr>
+          <tr><td class="m">Đầu vào lỗi</td><td>Nhìn thấy ngay, sửa tay</td><td>Phải tự phát hiện và báo động</td></tr>
+          <tr><td class="m">Chi phí</td><td>Hiếm khi nghĩ tới</td><td>Nhân với 365 — là một khoản tiền thật</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Toàn bộ phần còn lại của bài giảng chỉ nhằm giải quyết bốn dòng trong bảng này.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">03</span><span class="ex">Luyện: B4–B7</span></div>
+  <div class="body-col">
+    <h2>Hàm cửa sổ — công cụ chính của nghề</h2>
+    <p>Nếu chỉ được học thêm <em>một</em> thứ về SQL, hãy học cái này. Hàm cửa sổ chiếm phần lớn SQL đặc thù của DE.</p>
+    <p>Khác biệt so với <code>GROUP BY</code> gói gọn trong một câu: <strong><code>GROUP BY</code> gộp nhiều dòng lại thành một; hàm cửa sổ giữ nguyên số dòng và gắn thêm một giá trị tính từ nhóm.</strong></p>
+    <div class="pair">
+      <div class="code">
+        <div class="code-bar">GROUP BY — 5 dòng thành 1</div>
+        <pre><span class="k">SELECT</span> tinh, <span class="f">sum</span>(tien)
+<span class="k">FROM</span> don
+<span class="k">GROUP BY</span> tinh
+
+<span class="c">-- mất chi tiết từng đơn</span></pre>
+      </div>
+      <div class="code">
+        <div class="code-bar">OVER — vẫn 5 dòng</div>
+        <pre><span class="k">SELECT</span> don_id, tien,
+  <span class="f">sum</span>(tien) <span class="k">OVER</span> (<span class="k">PARTITION BY</span> tinh)
+<span class="k">FROM</span> don
+
+<span class="c">-- giữ chi tiết, thêm tổng của tỉnh</span></pre>
+      </div>
+    </div>
+
+    <h3>Ba thành phần của OVER</h3>
+    <div class="code">
+      <div class="code-bar">giải phẫu một hàm cửa sổ</div>
+      <pre><span class="f">sum</span>(tien) <span class="k">OVER</span> (
+    <span class="k">PARTITION BY</span> khach_id      <span class="c">-- 1. chia thành các nhóm riêng biệt</span>
+    <span class="k">ORDER BY</span>     ngay          <span class="c">-- 2. sắp thứ tự BÊN TRONG mỗi nhóm</span>
+    <span class="k">ROWS BETWEEN</span> <span class="k">UNBOUNDED PRECEDING</span> <span class="k">AND</span> <span class="k">CURRENT ROW</span>   <span class="c">-- 3. khung</span>
+)</pre>
+    </div>
+    <ul class="plain">
+      <li><strong>PARTITION BY</strong> — như <code>GROUP BY</code> nhưng không gộp dòng. Bỏ đi thì cả bảng là một nhóm.</li>
+      <li><strong>ORDER BY</strong> — quyết định "trước" và "sau". Bắt buộc với <code>LAG</code>, <code>LEAD</code>, luỹ kế, xếp hạng.</li>
+      <li><strong>Khung (frame)</strong> — tính trên bao nhiêu dòng quanh dòng hiện tại. Đây là phần hay bị bỏ qua nhất, và cũng là phần gây lỗi âm thầm nhất.</li>
+    </ul>
+    <div class="tip warn">
+      <span class="lab">ROWS và RANGE — khác biệt ít người biết</span>
+      <p>Khi có <code>ORDER BY</code> mà bạn <strong>không</strong> viết khung, mặc định là <code>RANGE</code>, không phải <code>ROWS</code>.</p>
+      <p><code>ROWS</code> đếm theo <strong>số dòng vật lý</strong>. <code>RANGE</code> gom theo <strong>giá trị</strong> — mọi dòng có cùng giá trị <code>ORDER BY</code> bị tính chung một lượt.</p>
+      <p>Hệ quả: tính luỹ kế theo ngày mà một ngày có nhiều dòng, <code>RANGE</code> sẽ cho cả cụm cùng ngày một giá trị giống nhau. Kết quả trông vẫn hợp lý, chỉ là sai. <strong>Cứ viết <code>ROWS</code> ra cho rõ ràng</strong> — đó là thói quen phân biệt người cẩn thận.</p>
+    </div>
+
+    <h3>Bảng tra nhanh</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Hàm</th><th>Dùng để</th></tr></thead>
+        <tbody>
+          <tr><td class="m">row_number()</td><td>Đánh số 1,2,3… — khử trùng, lấy bản mới nhất</td></tr>
+          <tr><td class="m">rank() / dense_rank()</td><td>Xếp hạng có xử lý đồng hạng</td></tr>
+          <tr><td class="m">lag() / lead()</td><td>Nhìn dòng trước / dòng sau — so kỳ, tính khoảng cách</td></tr>
+          <tr><td class="m">sum() OVER</td><td>Luỹ kế, tổng theo nhóm mà vẫn giữ chi tiết</td></tr>
+          <tr><td class="m">first_value() / last_value()</td><td>Lấy giá trị đầu/cuối của nhóm</td></tr>
+          <tr><td class="m">ntile(n)</td><td>Chia nhóm thành n phần đều — phân khúc khách hàng</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">04</span><span class="ex">Luyện: B1–B3</span></div>
+  <div class="body-col">
+    <h2>Khuôn mẫu 1: khử trùng và làm sạch</h2>
+    <p>Đây là đoạn SQL bạn sẽ viết nhiều nhất trong đời làm DE. Dữ liệu nguồn gửi trùng là chuyện bình thường — CDC gửi lại khi khởi động lại, API trả chồng lấn, job chạy lại.</p>
+    <div class="code">
+      <div class="code-bar">khuôn mẫu khử trùng · học thuộc</div>
+      <pre><span class="k">WITH</span> danh_so <span class="k">AS</span> (
+    <span class="k">SELECT</span> *,
+           <span class="f">row_number</span>() <span class="k">OVER</span> (
+               <span class="k">PARTITION BY</span> ma_kh        <span class="c">-- khoá tự nhiên</span>
+               <span class="k">ORDER BY</span> nhan_luc <span class="k">DESC</span>   <span class="c">-- cái nào "mới hơn"</span>
+           ) <span class="k">AS</span> rn
+    <span class="k">FROM</span> khach_hang_raw
+)
+<span class="k">SELECT</span> * <span class="k">EXCLUDE</span> (rn) <span class="k">FROM</span> danh_so <span class="k">WHERE</span> rn = <span class="s">1</span>;</pre>
+    </div>
+    <p>Ba chỗ cần điền, và chỉ ba chỗ đó thay đổi giữa các bài toán: <strong>khoá tự nhiên</strong>, <strong>tiêu chí mới hơn</strong>, và <code>rn = 1</code>.</p>
+
+    <h3>QUALIFY — viết gọn lại</h3>
+    <p>Nhớ thứ tự thực thi ở phần 01: không lọc được hàm cửa sổ bằng <code>WHERE</code>, nên mới phải bọc CTE. <code>QUALIFY</code> sinh ra đúng để giải quyết chuyện đó:</p>
+    <div class="code good">
+      <div class="code-bar">cùng kết quả, gọn hơn hẳn</div>
+      <pre><span class="k">SELECT</span> * <span class="k">FROM</span> khach_hang_raw
+<span class="k">QUALIFY</span> <span class="f">row_number</span>() <span class="k">OVER</span> (<span class="k">PARTITION BY</span> ma_kh <span class="k">ORDER BY</span> nhan_luc <span class="k">DESC</span>) = <span class="s">1</span>;</pre>
+    </div>
+    <p>DuckDB, BigQuery, Snowflake đều có <code>QUALIFY</code>. PostgreSQL thì chưa — ở đó vẫn phải bọc CTE.</p>
+
+    <h3>Parse dữ liệu bẩn mà không giết cả job</h3>
+    <p>Cột ngày tháng dạng text có hai định dạng lẫn lộn là tình huống kinh điển. Điểm mấu chốt nằm ở chữ <code>try_</code>:</p>
+    <div class="pair">
+      <div class="code bad">
+        <div class="code-bar">sai — nổ tung cả pipeline</div>
+        <pre><span class="f">strptime</span>(ngay_text, <span class="s">'%Y-%m-%d'</span>)
+
+<span class="c">-- gặp '04/03/2025' -> NÉM LỖI</span>
+<span class="c">-- job chết, 3h sáng có người</span>
+<span class="c">-- bị gọi dậy</span></pre>
+      </div>
+      <div class="code good">
+        <div class="code-bar">đúng — thử lần lượt</div>
+        <pre><span class="f">COALESCE</span>(
+  <span class="f">try_strptime</span>(ngay_text, <span class="s">'%Y-%m-%d'</span>),
+  <span class="f">try_strptime</span>(ngay_text, <span class="s">'%d/%m/%Y'</span>)
+)::<span class="k">DATE</span>
+
+<span class="c">-- không khớp -> trả NULL, job sống</span></pre>
+      </div>
+    </div>
+    <div class="tip">
+      <span class="lab">Nhưng đừng nuốt lỗi im lặng</span>
+      <p>Trả NULL thay vì chết là tốt, <strong>với điều kiện bạn có đếm số NULL đó</strong>. Luôn kèm một bài kiểm thử: <em>số dòng parse hỏng phải bằng 0</em>. Nếu nguồn xuất hiện định dạng thứ ba, test sẽ đỏ lên và bạn biết — thay vì mất dữ liệu âm thầm suốt sáu tháng.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">05</span><span class="ex">Luyện: B7–B10</span></div>
+  <div class="body-col">
+    <h2>Khuôn mẫu 2: chuỗi thời gian</h2>
+
+    <h3>Dải ngày — thứ hay bị quên nhất</h3>
+    <p><code>GROUP BY</code> theo ngày chỉ trả về những ngày <strong>có dữ liệu</strong>. Ngày pipeline chết sẽ không có dòng nào — và biểu đồ sẽ <strong>nối liền qua chỗ trống</strong>, che mất đúng cái sự cố bạn cần thấy.</p>
+    <div class="code">
+      <div class="code-bar">date spine</div>
+      <pre><span class="k">WITH</span> dai_ngay <span class="k">AS</span> (
+    <span class="k">SELECT</span> ngay::<span class="k">DATE</span> <span class="k">AS</span> ngay
+    <span class="k">FROM</span> <span class="f">generate_series</span>(<span class="k">DATE</span> <span class="s">'2026-01-01'</span>, <span class="k">DATE</span> <span class="s">'2026-06-30'</span>, <span class="k">INTERVAL</span> <span class="s">1</span> <span class="k">DAY</span>) t(ngay)
+)
+<span class="k">SELECT</span> d.ngay, <span class="f">COALESCE</span>(x.doanh_thu, <span class="s">0</span>) <span class="k">AS</span> doanh_thu
+<span class="k">FROM</span> dai_ngay d
+<span class="k">LEFT JOIN</span> doanh_thu_theo_ngay x <span class="k">ON</span> x.ngay = d.ngay;</pre>
+    </div>
+    <p>Với date spine, ngày hỏng tụt xuống 0 — nhìn phát biết ngay. Không có nó, đường biểu đồ mượt mà đi qua như không có chuyện gì.</p>
+
+    <h3>Chia phiên — kỹ thuật đáng giá nhất phần này</h3>
+    <p>Bài toán: gom sự kiện của một người thành các phiên, cách nhau quá 30 phút thì tính phiên mới. Nghe khó, nhưng có một khuôn mẫu ba bước dùng lại được cho <em>mọi</em> bài toán "chuỗi liên tiếp":</p>
+    <div class="code">
+      <div class="code-bar">LAG → đánh cờ → cộng dồn cờ</div>
+      <pre><span class="k">WITH</span> b1 <span class="k">AS</span> (        <span class="c">-- 1. nhìn sự kiện liền trước</span>
+    <span class="k">SELECT</span> khach_id, thoi_gian,
+           <span class="f">lag</span>(thoi_gian) <span class="k">OVER</span> (<span class="k">PARTITION BY</span> khach_id <span class="k">ORDER BY</span> thoi_gian) <span class="k">AS</span> truoc
+    <span class="k">FROM</span> su_kien_web
+), b2 <span class="k">AS</span> (          <span class="c">-- 2. cắm cờ 1 ở chỗ bắt đầu phiên mới</span>
+    <span class="k">SELECT</span> *, <span class="k">CASE WHEN</span> truoc <span class="k">IS NULL</span>
+                    <span class="k">OR</span> thoi_gian - truoc &gt; <span class="k">INTERVAL</span> <span class="s">30</span> <span class="k">MINUTE</span>
+               <span class="k">THEN</span> <span class="s">1</span> <span class="k">ELSE</span> <span class="s">0</span> <span class="k">END</span> <span class="k">AS</span> moc
+    <span class="k">FROM</span> b1
+), b3 <span class="k">AS</span> (          <span class="c">-- 3. cộng dồn cờ = số hiệu phiên</span>
+    <span class="k">SELECT</span> *, <span class="f">sum</span>(moc) <span class="k">OVER</span> (<span class="k">PARTITION BY</span> khach_id <span class="k">ORDER BY</span> thoi_gian
+                            <span class="k">ROWS BETWEEN</span> <span class="k">UNBOUNDED PRECEDING</span> <span class="k">AND</span> <span class="k">CURRENT ROW</span>) <span class="k">AS</span> so_phien
+    <span class="k">FROM</span> b2
+)
+<span class="k">SELECT</span> khach_id, <span class="f">max</span>(so_phien) <span class="k">AS</span> so_phien <span class="k">FROM</span> b3 <span class="k">GROUP BY</span> <span class="s">1</span>;</pre>
+    </div>
+    <div class="tip">
+      <span class="lab">Mẹo nhớ cả đời</span>
+      <p><strong>Cộng dồn một cột cờ 0/1 chính là cách đánh số nhóm.</strong> Khuôn mẫu này dùng được cho mọi bài toán chuỗi liên tiếp: phiên truy cập, chuỗi ngày đăng nhập liên tục, khoảng thời gian máy chạy không gián đoạn, các lần giá thay đổi. Nhận ra nó một lần là dùng được mãi.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">06</span><span class="ex">Luyện: B11, C1–C5</span></div>
+  <div class="body-col">
+    <h2>Bốn cái bẫy im lặng</h2>
+    <p>Điểm chung của cả bốn: <strong>không có lỗi nào được báo</strong>. Query chạy xong, trả về kết quả trông rất hợp lý, và nó sai.</p>
+
+    <h3>1. NOT IN gặp NULL</h3>
+    <div class="pair">
+      <div class="code bad">
+        <div class="code-bar">sai — có thể trả về rỗng</div>
+        <pre><span class="k">WHERE</span> khach_id <span class="k">NOT IN</span> (
+    <span class="k">SELECT</span> khach_id <span class="k">FROM</span> don
+)
+<span class="c">-- danh sách con có DÙ CHỈ 1 NULL</span>
+<span class="c">-- -> toàn bộ kết quả RỖNG SẠCH</span>
+<span class="c">-- -> không lỗi, không cảnh báo</span></pre>
+      </div>
+      <div class="code good">
+        <div class="code-bar">đúng — miễn nhiễm NULL</div>
+        <pre><span class="k">WHERE NOT EXISTS</span> (
+    <span class="k">SELECT</span> <span class="s">1</span> <span class="k">FROM</span> don d
+    <span class="k">WHERE</span> d.khach_id = k.khach_id
+)</pre>
+      </div>
+    </div>
+    <p>Lý do: <code>x NOT IN (1, NULL)</code> cho ra <code>UNKNOWN</code> chứ không phải <code>true</code>, và <code>WHERE</code> loại bỏ mọi thứ không phải <code>true</code>. <strong>Đơn giản là đừng dùng <code>NOT IN</code> với truy vấn con.</strong></p>
+
+    <h3>2. count(*) sau LEFT JOIN</h3>
+    <div class="pair">
+      <div class="code bad">
+        <div class="code-bar">sai — khách 0 đơn thành 1 đơn</div>
+        <pre><span class="k">SELECT</span> k.ma_kh, <span class="f">count</span>(*)
+<span class="k">FROM</span> khach k
+<span class="k">LEFT JOIN</span> don d <span class="k">ON</span> ...
+<span class="k">GROUP BY</span> <span class="s">1</span>
+<span class="c">-- LEFT JOIN vẫn sinh 1 dòng NULL</span></pre>
+      </div>
+      <div class="code good">
+        <div class="code-bar">đúng</div>
+        <pre><span class="k">SELECT</span> k.ma_kh, <span class="f">count</span>(d.don_id)
+<span class="k">FROM</span> khach k
+<span class="k">LEFT JOIN</span> don d <span class="k">ON</span> ...
+<span class="k">GROUP BY</span> <span class="s">1</span>
+<span class="c">-- count(cột) bỏ qua NULL -> ra 0</span></pre>
+      </div>
+    </div>
+
+    <h3>3. JOIN nhân dòng (fan-out)</h3>
+    <p>Nối bảng đơn hàng với bảng chi tiết rồi <code>sum(don.tong_tien)</code> — mỗi đơn có 3 dòng chi tiết thì tổng tiền bị đếm <strong>ba lần</strong>. Con số vẫn ra, vẫn trông hợp lý, chỉ là gấp ba.</p>
+    <p>Cách phòng: trước khi nối, luôn tự hỏi <em>"bên phải có đúng một dòng cho mỗi khoá không?"</em> Nếu không chắc, gộp bên phải lại trước rồi mới nối. Và kiểm chứng bằng cách <strong>đếm số dòng trước và sau khi nối</strong>.</p>
+
+    <h3>4. Chia cho 0</h3>
+    <p>Tính phần trăm tăng trưởng mà kỳ trước bằng 0 — tuỳ hệ mà nó ném lỗi hoặc trả <code>Infinity</code>, và dashboard hiện một con số vô nghĩa. Bọc mẫu số bằng <code>nullif(x, 0)</code> là xong: kết quả thành <code>NULL</code>, biểu đồ để trống, không ai bị lừa.</p>
+    <div class="tip warn">
+      <span class="lab">Nguyên tắc chung rút ra từ cả bốn</span>
+      <p>Trong SQL, thứ đáng sợ không phải là câu query báo lỗi — đó là loại dễ nhất, vì bạn biết ngay. Thứ đáng sợ là <strong>câu query chạy êm và trả về số sai</strong>. Vì vậy phần kiểm thử ở bài giảng này không phải phần phụ, nó là phần chính.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">07</span><span class="ex">Luyện: B13</span></div>
+  <div class="body-col">
+    <h2>Khuôn mẫu 3: lịch sử không được viết lại</h2>
+    <p>Khách hàng chuyển từ Hà Nội vào Đà Nẵng. Câu hỏi: đơn hàng họ đặt <em>năm ngoái</em> nên tính cho tỉnh nào?</p>
+    <p>Nếu bạn ghi đè địa chỉ mới lên bản ghi cũ, toàn bộ báo cáo doanh thu theo tỉnh của quá khứ <strong>đổi theo</strong>. Sếp mở lại báo cáo tháng trước và thấy số khác — đó là lúc bạn mất lòng tin, và rất khó lấy lại.</p>
+    <p><strong>SCD Type 2</strong> giải quyết bằng cách giữ mọi phiên bản kèm khoảng thời gian hiệu lực:</p>
+    <div class="code">
+      <div class="code-bar">dựng bảng lịch sử bằng LEAD</div>
+      <pre><span class="k">WITH</span> x <span class="k">AS</span> (
+    <span class="k">SELECT</span> ma_kh, tinh, ghi_nhan_ngay,
+           <span class="f">lead</span>(ghi_nhan_ngay) <span class="k">OVER</span> (<span class="k">PARTITION BY</span> ma_kh <span class="k">ORDER BY</span> ghi_nhan_ngay) <span class="k">AS</span> ngay_sau
+    <span class="k">FROM</span> khach_hang_thay_doi
+)
+<span class="k">SELECT</span> ma_kh, tinh,
+       ghi_nhan_ngay                                <span class="k">AS</span> hieu_luc_tu,
+       <span class="f">COALESCE</span>(ngay_sau - <span class="s">1</span>, <span class="k">DATE</span> <span class="s">'9999-12-31'</span>) <span class="k">AS</span> hieu_luc_den,
+       ngay_sau <span class="k">IS NULL</span>                            <span class="k">AS</span> la_ban_hien_tai
+<span class="k">FROM</span> x;</pre>
+    </div>
+    <p>Rồi khi dùng, <strong>nối theo ngày giao dịch</strong> chứ không nối vào bản hiện tại:</p>
+    <div class="code good">
+      <div class="code-bar">nối theo khoảng thời gian</div>
+      <pre><span class="k">JOIN</span> scd s <span class="k">ON</span> s.ma_kh = d.ma_kh
+        <span class="k">AND</span> d.ngay_dat <span class="k">BETWEEN</span> s.hieu_luc_tu <span class="k">AND</span> s.hieu_luc_den</pre>
+    </div>
+    <p>Đơn tháng 2 tự động tính cho tỉnh cũ, đơn tháng 5 tính cho tỉnh mới. Lịch sử đứng yên.</p>
+    <div class="tip">
+      <span class="lab">Vì sao dùng 9999-12-31 thay cho NULL</span>
+      <p>Để <code>BETWEEN</code> luôn hoạt động mà không phải viết thêm nhánh xử lý NULL. Một quy ước nhỏ, tiết kiệm rất nhiều <code>OR ... IS NULL</code> rải khắp code.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">08</span><span class="ex">Luyện: B14</span></div>
+  <div class="body-col">
+    <h2>Khuôn mẫu 4: chạy lại phải an toàn</h2>
+    <p>Đây là khái niệm quan trọng nhất của cả bài giảng. Job lỗi giữa chừng là chuyện <strong>hằng tuần</strong>, không phải chuyện hiếm. Câu hỏi duy nhất là: bấm chạy lại rồi đi ngủ tiếp, hay phải ngồi dọn tay lúc 3 giờ sáng?</p>
+    <div class="pair">
+      <div class="code bad">
+        <div class="code-bar">sai — chạy 3 lần, gấp 3</div>
+        <pre><span class="k">INSERT INTO</span> doanh_thu_ngay
+<span class="k">SELECT</span> ngay_dat, <span class="f">count</span>(*), <span class="f">sum</span>(tien)
+<span class="k">FROM</span> don
+<span class="k">WHERE</span> ngay_dat = <span class="k">DATE</span> <span class="s">'2026-03-15'</span>
+<span class="k">GROUP BY</span> <span class="s">1</span>;
+
+<span class="c">-- không ai báo lỗi cả</span></pre>
+      </div>
+      <div class="code good">
+        <div class="code-bar">đúng — tự dọn trước khi ghi</div>
+        <pre><span class="k">DELETE FROM</span> doanh_thu_ngay
+<span class="k">WHERE</span> ngay = <span class="k">DATE</span> <span class="s">'2026-03-15'</span>;
+
+<span class="k">INSERT INTO</span> doanh_thu_ngay
+<span class="k">SELECT</span> ngay_dat, <span class="f">count</span>(*), <span class="f">sum</span>(tien)
+<span class="k">FROM</span> don
+<span class="k">WHERE</span> ngay_dat = <span class="k">DATE</span> <span class="s">'2026-03-15'</span>
+<span class="k">GROUP BY</span> <span class="s">1</span>;</pre>
+      </div>
+    </div>
+    <p>Nguyên tắc gói trong một câu: <strong>mỗi lần chạy phải tự dọn dẹp phần của chính nó trước khi ghi.</strong> Hai cách làm phổ biến là <code>DELETE</code> theo phân vùng rồi <code>INSERT</code> (đơn giản, dễ hiểu, hợp bảng phân vùng theo ngày), hoặc <code>MERGE</code>/upsert theo khoá (hợp khi dữ liệu được sửa lẻ tẻ chứ không theo lô ngày).</p>
+
+    <h3>Dữ liệu về trễ — và vì sao idempotency lại cứu bạn</h3>
+    <p>Một đơn đặt lúc 23:58 ngày 15 nhưng mãi 01:30 ngày 16 mới về tới kho. Job chạy đêm 15 sẽ <strong>bỏ sót vĩnh viễn</strong> đơn đó. Con số ngày 15 thiếu mãi mãi, và không ai biết vì sao.</p>
+    <p>Cách chữa đơn giản đến bất ngờ: <strong>cửa sổ nhìn lại</strong>. Mỗi lần chạy, tính lại 3 ngày gần nhất thay vì chỉ 1 ngày.</p>
+    <div class="code good">
+      <div class="code-bar">cửa sổ nhìn lại 3 ngày</div>
+      <pre><span class="k">DELETE FROM</span> doanh_thu_ngay <span class="k">WHERE</span> ngay &gt;= <span class="k">DATE</span> <span class="s">'2026-03-15'</span> - <span class="s">3</span>;
+<span class="k">INSERT INTO</span> doanh_thu_ngay <span class="k">SELECT</span> ... <span class="k">WHERE</span> ngay_dat &gt;= <span class="k">DATE</span> <span class="s">'2026-03-15'</span> - <span class="s">3</span> ...;</pre>
+    </div>
+    <div class="tip">
+      <span class="lab">Chỗ hai khái niệm gặp nhau</span>
+      <p>Tính lại 3 ngày <strong>chỉ an toàn vì job đã idempotent</strong>. Nếu chỉ <code>INSERT</code> thuần, tính lại 3 ngày nghĩa là nhân ba số liệu của 3 ngày đó.</p>
+      <p>Idempotency không phải một thứ hay ho để có. Nó là <strong>điều kiện tiên quyết</strong> để mọi cơ chế chống lỗi khác hoạt động được.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">09</span></div>
+  <div class="body-col">
+    <h2>Viết SQL không đốt tiền</h2>
+    <p>Bên dev, query chậm nghĩa là người dùng chờ. Bên DE trên kho đám mây, query viết ẩu quét nhầm 40 TB là <strong>một hoá đơn</strong> — và nếu nó nằm trong job chạy mỗi giờ thì nhân lên 24 lần mỗi ngày.</p>
+    <p>Ba thói quen giải quyết gần hết vấn đề:</p>
+    <ol class="steps">
+      <li><strong>Không bao giờ <code>SELECT *</code> trên kho lưu theo cột.</strong> BigQuery, Snowflake, ClickHouse tính tiền theo lượng dữ liệu quét. Bảng 200 cột mà bạn cần 3 cột — <code>SELECT *</code> đắt hơn gần 70 lần cho cùng một kết quả.</li>
+      <li><strong>Luôn lọc theo cột phân vùng.</strong> Bảng phân vùng theo ngày mà bạn lọc bằng cột khác thì kho buộc phải quét toàn bộ lịch sử. Lọc đúng cột phân vùng thì nó bỏ qua hẳn những phần không liên quan — gọi là <em>partition pruning</em>.</li>
+      <li><strong>Lọc sớm, nối sau.</strong> Giảm số dòng trước khi <code>JOIN</code>, đừng nối cả hai bảng khổng lồ rồi mới lọc.</li>
+    </ol>
+    <div class="tip">
+      <span class="lab">Đọc kế hoạch thực thi</span>
+      <p>Đặt <code>EXPLAIN</code> trước câu query để xem kho định làm gì. Chưa cần hiểu hết — chỉ cần tìm đúng hai thứ: <strong>số dòng nó dự định quét</strong> (lớn bất thường so với kỳ vọng là có vấn đề) và <strong>kiểu join</strong> (thấy vòng lặp lồng nhau trên bảng lớn là dấu hiệu xấu).</p>
+      <p>Trên BigQuery, phần ước tính dung lượng quét hiện ngay trước khi bạn bấm chạy. <strong>Tập thói quen liếc con số đó mỗi lần</strong> — nó là giá tiền của câu query.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">10</span><span class="ex">Luyện: D1–D2b</span></div>
+  <div class="body-col">
+    <h2>dbt: đưa kỷ luật phần mềm vào SQL</h2>
+    <p>Trước dbt, phần biến đổi dữ liệu ở hầu hết công ty là một mớ file SQL rời rạc, chạy bằng tay theo thứ tự ghi trong đầu ai đó. Không kiểm thử, không lịch sử thay đổi, không ai biết bảng nào sinh ra từ bảng nào.</p>
+    <p><strong>dbt chỉ làm một việc: biến SQL thành phần mềm tử tế.</strong> Bạn vẫn viết SQL thuần. dbt thêm vào bốn thứ:</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>dbt thêm</th><th>Nghĩa là</th></tr></thead>
+        <tbody>
+          <tr><td class="m">ref()</td><td>Tự suy ra thứ tự chạy và vẽ sơ đồ lineage</td></tr>
+          <tr><td class="m">tests</td><td>Kiểm thử dữ liệu khai báo bằng vài dòng YAML</td></tr>
+          <tr><td class="m">Jinja</td><td>Biến, vòng lặp, macro — chống lặp code SQL</td></tr>
+          <tr><td class="m">Git</td><td>Lịch sử thay đổi, review, CI/CD như code bình thường</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Model, source và ref</h3>
+    <p>Một <strong>model</strong> là một file <code>.sql</code> chứa đúng một câu <code>SELECT</code>. Tên file thành tên bảng. dbt lo phần <code>CREATE TABLE</code>.</p>
+    <div class="code">
+      <div class="code-bar">models/staging/stg_khach_hang.sql</div>
+      <pre><span class="k">SELECT</span> ma_kh, <span class="f">trim</span>(ten) <span class="k">AS</span> ten, <span class="f">lower</span>(hang) <span class="k">AS</span> hang
+<span class="k">FROM</span> {{ <span class="f">source</span>(<span class="s">'nguon'</span>, <span class="s">'khach_hang_raw'</span>) }}</pre>
+    </div>
+    <p>Hai hàm phải phân biệt rõ, vì nhầm chúng là lỗi số một của người mới học dbt:</p>
+    <ul class="plain">
+      <li><code>{{ source(...) }}</code> — trỏ tới bảng <strong>bên ngoài</strong> dbt, do pipeline ingestion đổ vào. Chỉ dùng ở tầng staging.</li>
+      <li><code>{{ ref('ten_model') }}</code> — trỏ tới một model <strong>khác của dbt</strong>. Dùng ở mọi tầng phía sau.</li>
+    </ul>
+    <p>Vì sao quan trọng đến vậy: dbt suy ra <strong>toàn bộ đồ thị phụ thuộc</strong> từ hai hàm này. Viết thẳng tên bảng thay vì <code>ref()</code> thì dbt không biết quan hệ, sẽ chạy sai thứ tự, và sơ đồ lineage mất một mắt xích.</p>
+
+    <h3>Bốn kiểu materialization</h3>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Kiểu</th><th>dbt làm gì</th><th>Dùng khi</th></tr></thead>
+        <tbody>
+          <tr><td class="m">view</td><td>Tạo view, không lưu dữ liệu</td><td>Tầng staging — rẻ, luôn tươi</td></tr>
+          <tr><td class="m">table</td><td>Xoá và dựng lại toàn bộ mỗi lần</td><td>Mart nhỏ, truy vấn nhiều lần</td></tr>
+          <tr><td class="m">incremental</td><td>Chỉ xử lý phần mới</td><td>Bảng fact lớn — xem phần 11</td></tr>
+          <tr><td class="m">ephemeral</td><td>Chèn thẳng vào model sau dưới dạng CTE</td><td>Bước trung gian không cần lưu</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Cấu trúc thư mục chuẩn</h3>
+    <div class="code">
+      <div class="code-bar">quy ước gần như mọi công ty đều theo</div>
+      <pre>models/
+├── staging/     <span class="c">-- 1 model = 1 bảng nguồn. CHỈ làm sạch, KHÔNG join.</span>
+│   └── stg_*.sql
+└── marts/       <span class="c">-- logic nghiệp vụ, join thoải mái, người dùng cuối chạm vào</span>
+    ├── dim_*.sql
+    └── fct_*.sql</pre>
+    </div>
+    <p>Kỷ luật ở đây rất đáng giữ: <strong>tầng staging tuyệt đối không join</strong>. Một model staging ứng với đúng một bảng nguồn. Nhờ vậy khi nguồn đổi cấu trúc, bạn biết chính xác phải sửa file nào.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">11</span><span class="ex">Luyện: D3</span></div>
+  <div class="body-col">
+    <h2>Model incremental — phần quan trọng nhất của dbt</h2>
+    <p>Bảng fact 500 triệu dòng mà dựng lại từ đầu mỗi đêm thì vừa lâu vừa tốn tiền vô lý — 99% dữ liệu không hề đổi. Model <strong>incremental</strong> chỉ xử lý phần mới.</p>
+    <div class="code">
+      <div class="code-bar">models/marts/fct_doanh_thu_ngay.sql</div>
+      <pre>{{ <span class="f">config</span>(
+    materialized = <span class="s">'incremental'</span>,
+    unique_key = <span class="s">'ngay'</span>,
+    incremental_strategy = <span class="s">'delete+insert'</span>
+) }}
+
+<span class="k">SELECT</span> ngay_dat <span class="k">AS</span> ngay, <span class="f">count</span>(*) <span class="k">AS</span> so_don, <span class="f">sum</span>(tong_tien) <span class="k">AS</span> doanh_thu
+<span class="k">FROM</span> {{ <span class="f">ref</span>(<span class="s">'stg_don_hang'</span>) }}
+<span class="k">WHERE</span> la_hoan_thanh
+
+{% if is_incremental() %}
+    <span class="c">-- khối này BỊ BỎ QUA ở lần chạy đầu tiên</span>
+    <span class="k">AND</span> ngay_dat &gt;= (<span class="k">SELECT</span> <span class="f">COALESCE</span>(<span class="f">max</span>(ngay), <span class="k">DATE</span> <span class="s">'1900-01-01'</span>) - <span class="s">3</span> <span class="k">FROM</span> {{ this }})
+{% endif %}
+
+<span class="k">GROUP BY</span> <span class="s">1</span></pre>
+    </div>
+    <p>Bốn thứ cần hiểu, và chúng ăn khớp với nhau:</p>
+    <ol class="steps">
+      <li><strong><code>is_incremental()</code></strong> — trả <code>false</code> ở lần chạy đầu (bảng chưa tồn tại) nên dbt tính <em>toàn bộ lịch sử</em>. Từ lần thứ hai trở đi trả <code>true</code>, và khối lọc mới có tác dụng. Một file, hai chế độ chạy.</li>
+      <li><strong><code>{{ this }}</code></strong> — chính bảng này ở trạng thái <em>hiện có</em> trong kho. Nhờ nó bạn hỏi được "lần trước tôi xử lý tới đâu rồi".</li>
+      <li><strong><code>unique_key</code> + <code>delete+insert</code></strong> — đây là chỗ idempotency của phần 08 được dbt làm hộ. Không có hai dòng này, chạy lại sẽ nhân đôi dữ liệu.</li>
+      <li><strong><code>- 3</code></strong> — cửa sổ nhìn lại. Không có nó, đơn về trễ mất vĩnh viễn.</li>
+    </ol>
+    <div class="tip warn">
+      <span class="lab">Ba sai lầm kinh điển với incremental</span>
+      <p><strong>Quên <code>unique_key</code>.</strong> dbt sẽ chỉ chèn thêm, và mỗi lần chạy lại là một lần nhân bản dữ liệu.</p>
+      <p><strong>Lấy đúng ngày mới nhất, không có cửa sổ nhìn lại.</strong> Mọi bản ghi về trễ bị mất vĩnh viễn — và đây là loại lỗi không bao giờ tự lộ ra.</p>
+      <p><strong>Đổi logic model nhưng không chạy <code>--full-refresh</code>.</strong> Dữ liệu cũ vẫn giữ theo logic cũ, dữ liệu mới theo logic mới. Bảng thành nửa nọ nửa kia, và cực kỳ khó phát hiện.</p>
+    </div>
+    <div class="tip">
+      <span class="lab">Khi nào mới nên dùng incremental</span>
+      <p>Chỉ khi bảng đã đủ lớn để dựng lại thấy đau. Incremental thêm hẳn một lớp phức tạp và một nhóm lỗi mới. <strong>Cứ bắt đầu bằng <code>table</code></strong>, khi nào chạy quá lâu hoặc quá tốn tiền thì hãy đổi. Tối ưu sớm ở đây thường lỗ nhiều hơn lãi.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">12</span><span class="ex">Luyện: D4–D7</span></div>
+  <div class="body-col">
+    <h2>Kiểm thử, snapshot và macro</h2>
+
+    <h3>Bốn generic test</h3>
+    <p>Đây chính là bốn câu query bạn tự viết tay ở phần 06 — dbt gói lại thành khai báo:</p>
+    <div class="code">
+      <div class="code-bar">models/marts/schema.yml</div>
+      <pre>models:
+  - name: stg_khach_hang
+    columns:
+      - name: ma_kh
+        data_tests: [unique, not_null]
+      - name: hang_thanh_vien
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [<span class="s">'bac'</span>, <span class="s">'vang'</span>, <span class="s">'kim_cuong'</span>]
+      - name: khach_id
+        data_tests:
+          - relationships:              <span class="c"># khoá ngoại</span>
+              arguments:
+                to: ref(<span class="s">'stg_khach_hang'</span>)
+                field: ma_kh</pre>
+    </div>
+    <p>Quy tắc ngầm của mọi test dbt: câu query bên dưới <strong>phải trả về rỗng thì mới đạt</strong>. Trả về dòng nào nghĩa là dòng đó vi phạm.</p>
+
+    <h3>Singular test — khi quy tắc phức tạp hơn</h3>
+    <p>Generic test chỉ kiểm được từng cột. Quy tắc nghiệp vụ thật thì viết hẳn một câu SQL đặt trong thư mục <code>tests/</code>. Ví dụ: <em>tổng tiền của đơn phải khớp tổng chi tiết</em>. Nếu lệch, test đỏ và chỉ đúng những dòng có vấn đề.</p>
+
+    <h3>Snapshot = SCD Type 2 tự động</h3>
+    <p>Phần 07 bạn tự dựng bảng lịch sử bằng <code>LEAD</code>. dbt làm sẵn: mỗi lần chạy <code>dbt snapshot</code>, nó so bản hiện tại với bản đã lưu; thấy khác thì đóng dòng cũ và mở dòng mới, tự quản <code>dbt_valid_from</code> và <code>dbt_valid_to</code>.</p>
+    <p>Hai chiến lược: <code>timestamp</code> tin vào một cột thời gian cập nhật (nhanh hơn, nên ưu tiên khi nguồn có sẵn), còn <code>check</code> so trực tiếp nội dung các cột (dùng khi nguồn không có cột đó).</p>
+    <div class="tip warn">
+      <span class="lab">Snapshot chỉ thấy cái nó nhìn thấy</span>
+      <p>Snapshot chụp ảnh dữ liệu <strong>tại thời điểm chạy</strong>. Nếu một khách đổi tỉnh hai lần giữa hai lần chạy, dbt chỉ ghi nhận trạng thái cuối — lần đổi ở giữa mất luôn. Muốn không sót thì phải bắt thay đổi ngay từ tầng ingestion bằng CDC, không thể trông chờ vào snapshot.</p>
+    </div>
+
+    <h3>Macro — chống lặp code</h3>
+    <p>Macro là hàm viết bằng Jinja. Khi cùng một đoạn logic xuất hiện ở mười model, gói nó thành macro để lúc sửa chỉ phải sửa một chỗ.</p>
+    <div class="tip">
+      <span class="lab">Mẹo gỡ lỗi Jinja</span>
+      <p>Jinja lỗi thì thông báo thường khó hiểu. Chạy <code>dbt compile</code> rồi mở file trong <code>target/compiled/…</code> — đó là <strong>SQL thật sự</strong> dbt gửi xuống kho, sau khi mọi thẻ Jinja đã được dịch. 90% lỗi lộ ra ngay khi nhìn file đó.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="rail"><span class="n">13</span></div>
+  <div class="body-col">
+    <h2>Giờ thì luyện</h2>
+    <p>Đọc mười lần không bằng gõ một lần. Bộ bài tập nằm ngay cạnh file này, dùng DuckDB đã có sẵn trên máy — không phải cài gì thêm.</p>
+    <div class="code good">
+      <div class="code-bar">bắt đầu trong 30 giây</div>
+      <pre><span class="k">cd</span> bai-tap
+./chay.sh</pre>
+    </div>
+    <p>Lệnh này dựng một shop bán lẻ giả lập rồi thả bạn vào shell DuckDB.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>File</th><th>Nội dung</th><th>Số bài</th></tr></thead>
+        <tbody>
+          <tr><td class="m">A-on-nhanh.sql</td><td>Ôn SQL cơ bản cho nóng tay</td><td>6</td></tr>
+          <tr><td class="m">B-sql-cho-de.sql</td><td>Mười bốn khuôn mẫu trong bài giảng này</td><td>14</td></tr>
+          <tr><td class="m">C-kiem-thu-du-lieu.sql</td><td>Viết query bắt lỗi dữ liệu</td><td>5</td></tr>
+          <tr><td class="m">dbt-lab/</td><td>Chuyển tất cả sang dbt, đã cài sẵn dbt-duckdb</td><td>7</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tip">
+      <span class="lab">Dữ liệu cố ý bẩn — đó là điểm mấu chốt</span>
+      <p>Bộ dữ liệu được cài sẵn lỗi: 20 khách gửi trùng, 15 dòng thiếu tỉnh, 40 dòng ngày sai định dạng, 31 đơn lệch tổng tiền, 120 đơn về trễ sang hôm sau.</p>
+      <p>Dữ liệu sạch không dạy được gì. Mọi khuôn mẫu trong bài giảng này sinh ra để đối phó với đúng những thứ đó.</p>
+    </div>
+    <div class="tip warn">
+      <span class="lab">Bài đáng bỏ công nhất</span>
+      <p>Làm <strong>B14</strong> rồi <strong>D3</strong>. Cả hai đều bắt bạn chạy cùng một job ba lần rồi tự kiểm tra con số có đổi không.</p>
+      <p>Khoảnh khắc bạn thấy chạy ba lần mà số vẫn y nguyên — và hiểu chính xác vì sao — là lúc bạn thật sự nắm được thứ phân biệt SQL của DE với SQL thông thường.</p>
+    </div>
+  </div>
+</section>
+
+<div class="closing">
+  <span class="lab">Nếu chỉ nhớ được bốn điều</span>
+  <h2>Bản tóm tắt 30 giây</h2>
+  <p>Bốn ô này là khung để treo mọi thứ còn lại. Mọi kỹ thuật SQL bạn học thêm sau này đều gắn được vào một trong bốn chỗ.</p>
+  <div class="recall">
+    <div><b>Cửa sổ, không phải GROUP BY</b><span>GROUP BY gộp dòng lại. Hàm cửa sổ giữ nguyên dòng và gắn thêm giá trị. Đây là công cụ chính.</span></div>
+    <div><b>Chạy lại phải an toàn</b><span>Tự dọn phần của mình trước khi ghi. Không có nó thì không cơ chế chống lỗi nào hoạt động được.</span></div>
+    <div><b>Query sai mà không báo lỗi</b><span>NOT IN gặp NULL, count(*) sau LEFT JOIN, JOIN nhân dòng. Không có gì báo — nên phải có test.</span></div>
+    <div><b>dbt chỉ là SQL có kỷ luật</b><span>ref() cho lineage, test cho niềm tin, Git cho lịch sử. Vẫn là SQL bạn đang viết.</span></div>
+  </div>
+</div>
+
+</div>

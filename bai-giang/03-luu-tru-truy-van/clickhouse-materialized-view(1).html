@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mô phỏng ClickHouse: page_views → MV → views_hourly</title>
+<style>
+  :root{
+    --bg:#f6f8fa; --panel:#ffffff; --panelsub:#eef1f4; --text:#1f2328; --muted:#6b7280;
+    --border:#d0d7de; --code:#0d1117; --codetext:#c9d1d9;
+    --vn:#16a34a; --us:#2563eb; --jp:#dc2626; --mv:#8b5cf6; --mvbg:rgba(139,92,246,.08);
+    --warnbg:#fef3c7; --warnbd:#f59e0b; --warntx:#92400e; --merged:#16a34a;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1117; --panel:#161b22; --panelsub:#11151b; --text:#e6edf3; --muted:#8b949e;
+      --border:#30363d; --code:#010409; --codetext:#c9d1d9; --mvbg:rgba(139,92,246,.15);
+      --warnbg:#3b2f0b; --warnbd:#8a6d1a; --warntx:#f0d98a;
+    }
+  }
+  *{box-sizing:border-box;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+       background:var(--bg); color:var(--text); margin:0; padding:24px; line-height:1.5;}
+  .wrap{max-width:960px; margin:0 auto;}
+  h1{font-size:20px; margin:0 0 4px;}
+  .sub{font-size:14px; color:var(--muted); margin:0 0 8px;}
+  .legend{font-size:12px; color:var(--muted); margin:0 0 16px;}
+  .legend .b{display:inline-block; margin-right:10px;}
+  .badge{font-weight:700; font-size:10px; color:#fff; padding:1px 6px; border-radius:4px;}
+  .toolbar{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;}
+  button{font-size:13px; font-weight:600; padding:9px 13px; border-radius:8px;
+         border:1px solid var(--border); background:var(--panel); color:var(--text);
+         cursor:pointer; transition:.15s;}
+  button:hover{filter:brightness(.97); transform:translateY(-1px);}
+  button.primary{background:var(--us); color:#fff; border-color:var(--us);}
+  button.danger{background:var(--jp); color:#fff; border-color:var(--jp);}
+  button.ghost{background:transparent; color:var(--muted);}
+  .warn{display:none; background:var(--warnbg); border:1px solid var(--warnbd); color:var(--warntx);
+        padding:10px 12px; border-radius:8px; font-size:13px; margin-bottom:12px; font-weight:600;}
+  .warn.show{display:block;}
+  .pipeline{display:grid; grid-template-columns:1fr 0.85fr 1.2fr; gap:12px; align-items:start;}
+  @media (max-width:760px){ .pipeline{grid-template-columns:1fr;} }
+  .col{background:var(--panelsub); border:1px solid var(--border); border-radius:12px;
+       padding:12px; min-height:130px;}
+  .col h3{font-size:13px; margin:0 0 2px;}
+  .eng{font-size:11px; font-family:ui-monospace,Menlo,Consolas,monospace; color:var(--muted); margin-bottom:10px;}
+  .part{background:var(--panel); border:1px solid var(--border); border-radius:8px;
+        padding:8px; margin-bottom:8px; animation:pop .28s ease;}
+  .part.merged{border-color:var(--merged); box-shadow:0 0 0 2px rgba(22,163,74,.18);}
+  .phead{font-size:11px; font-family:ui-monospace,Menlo,Consolas,monospace; color:var(--muted); margin-bottom:6px;}
+  .chip{display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:3px 7px;
+        border-radius:6px; border:1px solid; margin:2px 3px 2px 0; background:var(--panelsub);}
+  .arow{display:flex; align-items:center; gap:7px; font-size:12px; padding:3px 0;
+        font-family:ui-monospace,Menlo,Consolas,monospace;}
+  .arow .time{color:var(--muted);} .arow .v{margin-left:auto; font-weight:700;}
+  .mvwrap{text-align:center; padding-top:26px;}
+  .mvbox{border:2px dashed var(--mv); border-radius:10px; padding:12px; font-size:12px;
+         color:var(--mv); background:var(--mvbg); font-weight:600;}
+  .mvbox small{display:block; font-weight:400; margin-top:4px; opacity:.85;}
+  .mvbox.fire{animation:fire .55s ease;}
+  .flow{font-size:22px; color:var(--mv); margin:8px 0 0;}
+  .dash{margin-top:16px; background:var(--panelsub); border:1px solid var(--border);
+        border-radius:12px; padding:14px; display:none;}
+  .dash b{font-size:13px;}
+  pre{background:var(--code); color:var(--codetext); font-size:11px; padding:9px;
+      border-radius:6px; overflow-x:auto; margin:8px 0;}
+  table{border-collapse:collapse; font-size:12px; font-family:ui-monospace,Menlo,Consolas,monospace; margin-top:4px;}
+  td,th{border:1px solid var(--border); padding:4px 10px; text-align:left;}
+  .log{margin-top:14px; font-size:12px; border-left:3px solid var(--mv); padding-left:12px;
+       max-height:150px; overflow-y:auto;}
+  .log div{padding:2px 0; color:var(--muted);}
+  @keyframes pop{from{transform:scale(.9); opacity:0;} to{transform:scale(1); opacity:1;}}
+  @keyframes fire{0%{transform:scale(1);} 50%{transform:scale(1.06); box-shadow:0 0 18px rgba(139,92,246,.5);} 100%{transform:scale(1);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔬 Mô phỏng: page_views → Materialized View → views_hourly</h1>
+  <p class="sub">Bấm các nút và quan sát: INSERT tạo <b>part</b>, MV kích hoạt chạy <code>count()</code>, MERGE cộng dồn (SummingMergeTree).</p>
+  <p class="legend">
+    Quốc gia:
+    <span class="b"><span class="badge" style="background:#16a34a">VN</span></span>
+    <span class="b"><span class="badge" style="background:#2563eb">US</span></span>
+    <span class="b"><span class="badge" style="background:#dc2626">JP</span></span>
+    &nbsp;•&nbsp; Giờ: 08:00 / 09:00 / 10:00
+  </p>
+
+  <div class="toolbar">
+    <button class="primary" onclick="chInsert(4)">➕ INSERT 1 lô (4 event)</button>
+    <button class="danger" onclick="chSingles()">🔴 INSERT LẺ ×8 (gây lỗi)</button>
+    <button onclick="chMerge()">🔀 MERGE</button>
+    <button onclick="chQuery()">📊 Query dashboard</button>
+    <button class="ghost" onclick="chReset()">♻️ Reset</button>
+  </div>
+
+  <div class="warn" id="chWarn">⚠️ <b>Too many parts!</b> Quá nhiều part tí hon — đây chính là lỗi ở Câu 6. Giải pháp: INSERT theo lô lớn, đừng insert lẻ. Bấm MERGE để anh lao công gộp lại.</div>
+
+  <div class="pipeline">
+    <div class="col">
+      <h3>① Bảng THÔ: page_views</h3>
+      <div class="eng">ENGINE = MergeTree</div>
+      <div id="chRaw"></div>
+    </div>
+    <div class="col mvwrap">
+      <div class="mvbox" id="chMv">
+        ② MATERIALIZED VIEW
+        <small>trigger mỗi INSERT<br>count() GROUP BY giờ, quốc gia</small>
+      </div>
+      <div class="flow">⬇️</div>
+    </div>
+    <div class="col">
+      <h3>③ Bảng TỔNG HỢP: views_hourly</h3>
+      <div class="eng">ENGINE = SummingMergeTree</div>
+      <div id="chAgg"></div>
+    </div>
+  </div>
+
+  <div class="dash" id="chDash">
+    <b>📊 Kết quả dashboard đọc từ bảng tổng hợp</b>
+    <pre>SELECT hour, country, sum(views)
+FROM views_hourly
+GROUP BY hour, country;</pre>
+    <div id="chDashBody"></div>
+  </div>
+
+  <div class="log" id="chLog"></div>
+</div>
+
+<script>
+(function(){
+  var C=['VN','US','JP'], H=['08:00','09:00','10:00'];
+  var COL={VN:'#16a34a', US:'#2563eb', JP:'#dc2626'};
+  var raw=[], agg=[], ps=0, as=0;
+  function rnd(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function badge(c){ return '<span class="badge" style="background:'+COL[c]+'">'+c+'</span>'; }
+  function el(id){ return document.getElementById(id); }
+  function log(m){ var l=el('chLog'); var d=document.createElement('div'); d.innerHTML='• '+m; l.insertBefore(d,l.firstChild); }
+
+  window.chInsert=function(n){
+    var rows=[]; for(var i=0;i<n;i++) rows.push({c:rnd(C), h:rnd(H)});
+    ps++; raw.push({id:ps, rows:rows});
+    var map={}; rows.forEach(function(r){ var k=r.h+'|'+r.c; map[k]=(map[k]||0)+1; });
+    var ar=Object.keys(map).map(function(k){ var p=k.split('|'); return {h:p[0], c:p[1], v:map[k]}; });
+    as++; agg.push({id:as, rows:ar});
+    log('➕ INSERT '+n+' event → tạo <b>part_'+ps+'</b> (thô). MV chạy count() → ghi '+ar.length+' dòng vào part tổng hợp #'+as+'.');
+    fire(); render(); check();
+  };
+
+  window.chSingles=function(){
+    log('🔴 Insert LẺ 8 lần (mỗi event một câu INSERT riêng)...');
+    var i=0; var t=setInterval(function(){
+      if(i>=8){ clearInterval(t); check(); return; }
+      var r={c:rnd(C), h:rnd(H)}; ps++; raw.push({id:ps, rows:[r]});
+      as++; agg.push({id:as, rows:[{h:r.h, c:r.c, v:1}]});
+      i++; render(); check();
+    }, 230);
+  };
+
+  window.chMerge=function(){
+    if(raw.length>1){ var rr=[]; raw.forEach(function(p){ rr=rr.concat(p.rows); }); ps++; raw=[{id:ps, rows:rr, m:true}]; }
+    if(agg.length>1){
+      var mp={}; agg.forEach(function(p){ p.rows.forEach(function(r){ var k=r.h+'|'+r.c; mp[k]=(mp[k]||0)+r.v; }); });
+      var ar=Object.keys(mp).map(function(k){ var p=k.split('|'); return {h:p[0], c:p[1], v:mp[k]}; });
+      as++; agg=[{id:as, rows:ar, m:true}];
+    }
+    el('chWarn').className='warn';
+    log('🔀 MERGE: các part thô gộp làm một. Bên SummingMergeTree, các dòng cùng (giờ, quốc gia) được <b>CỘNG views</b> → bảng thu nhỏ lại.');
+    render();
+  };
+
+  window.chQuery=function(){
+    var mp={}; agg.forEach(function(p){ p.rows.forEach(function(r){ var k=r.h+'|'+r.c; mp[k]=(mp[k]||0)+r.v; }); });
+    var ar=Object.keys(mp).map(function(k){ var p=k.split('|'); return {h:p[0], c:p[1], v:mp[k]}; })
+           .sort(function(a,b){ return a.h<b.h?-1 : a.h>b.h?1 : (a.c<b.c?-1:1); });
+    var html='<table><tr><th>hour</th><th>country</th><th>views</th></tr>';
+    ar.forEach(function(r){ html+='<tr><td>'+r.h+'</td><td>'+r.c+'</td><td>'+r.v+'</td></tr>'; });
+    html+='</table>';
+    if(!ar.length) html='<i style="color:var(--muted)">Chưa có dữ liệu — hãy INSERT trước.</i>';
+    el('chDashBody').innerHTML=html; el('chDash').style.display='block';
+    log('📊 Dashboard: <code>sum(views) GROUP BY</code> tự gộp cả part CHƯA merge → số luôn <b>ĐÚNG</b> dù bảng chưa merge xong.');
+  };
+
+  window.chReset=function(){ raw=[]; agg=[]; ps=0; as=0; el('chLog').innerHTML=''; el('chDash').style.display='none'; el('chWarn').className='warn'; render(); };
+
+  function fire(){ var m=el('chMv'); m.className='mvbox fire'; setTimeout(function(){ m.className='mvbox'; }, 550); }
+  function check(){ el('chWarn').className = (raw.length>6 || agg.length>6) ? 'warn show' : 'warn'; }
+
+  function render(){
+    var rh=''; if(!raw.length) rh='<i style="font-size:11px; color:var(--muted)">trống — chưa INSERT</i>';
+    raw.forEach(function(p){
+      var b=''; p.rows.forEach(function(r){ b+='<span class="chip" style="border-color:'+COL[r.c]+'">'+badge(r.c)+' '+r.h+'</span>'; });
+      rh+='<div class="part'+(p.m?' merged':'')+'"><div class="phead">part_'+p.id+' · '+p.rows.length+' dòng'+(p.m?' · merged':'')+'</div>'+b+'</div>';
+    });
+    el('chRaw').innerHTML=rh;
+    var ah=''; if(!agg.length) ah='<i style="font-size:11px; color:var(--muted)">trống</i>';
+    agg.forEach(function(p){
+      var b=''; p.rows.forEach(function(r){ b+='<div class="arow"><span class="time">'+r.h+'</span>'+badge(r.c)+'<span class="v">views: '+r.v+'</span></div>'; });
+      ah+='<div class="part'+(p.m?' merged':'')+'"><div class="phead">part_'+p.id+' · '+p.rows.length+' dòng'+(p.m?' · merged':'')+'</div>'+b+'</div>';
+    });
+    el('chAgg').innerHTML=ah;
+  }
+  render();
+})();
+</script>
+</body>
+</html>

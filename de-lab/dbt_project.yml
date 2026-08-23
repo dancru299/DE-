@@ -1,0 +1,27 @@
+# ============================================================================
+# dbt đọc file này ĐẦU TIÊN. Nó cho dbt biết: project tên gì, model nằm đâu,
+# mỗi tầng được "vật chất hoá" (materialize) thành view hay table.
+# ============================================================================
+name: 'de_lab'
+version: '1.0.0'
+
+# Trỏ tới hồ sơ kết nối trong profiles.yml. TÊN PHẢI KHỚP.
+# Chính dòng này quyết định dbt gửi SQL xuống engine nào (DuckDB hay BigQuery).
+profile: 'de_lab'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  de_lab:
+    dwh:
+      +schema: dwh
+      +materialized: view      # tầng chuẩn hoá: view cho nhẹ, luôn tươi
+    mart:
+      +schema: mart
+      +materialized: table     # tầng phục vụ: table cho truy vấn nhanh

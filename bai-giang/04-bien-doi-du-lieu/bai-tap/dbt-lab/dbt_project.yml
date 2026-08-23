@@ -1,0 +1,16 @@
+name: 'de_lab'
+version: '1.0.0'
+profile: 'de_lab'
+
+model-paths:    ["models"]
+snapshot-paths: ["snapshots"]
+macro-paths:    ["macros"]
+target-path:    "target"
+clean-targets:  ["target", "dbt_packages"]
+
+models:
+  de_lab:
+    staging:
+      +materialized: view      # staging = view: rẻ, luôn tươi, không tốn chỗ
+    marts:
+      +materialized: table     # mart = table: người dùng cuối truy vấn nhiều lần

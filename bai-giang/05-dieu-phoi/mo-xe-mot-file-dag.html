@@ -1,0 +1,834 @@
+<title>Mổ xẻ một file DAG</title>
+<style>
+  :root {
+    /* Bảng màu: giấy kỹ thuật hơi ngả xanh rêu, mực gần đen, nhấn teal (thế giới của Airflow) */
+    --ground:      #F5F7F6;
+    --surface:     #FFFFFF;
+    --surface-alt: #ECF1EF;
+    --ink:         #131E1C;
+    --ink-soft:    #3A4B48;
+    --muted:       #637672;
+    --line:        #D4DEDB;
+    --accent:      #0A6B6B;
+    --accent-soft: #DCEDEB;
+    --warn:        #9A6316;
+    --warn-soft:   #F7EEDC;
+    --pass:        #2C6E4A;
+    --fail:        #A63328;
+
+    /* Khung code: cố định ở cả hai theme, như ảnh chụp màn hình editor in trong sách */
+    --code-bg:     #0C1413;
+    --code-bar:    #16211F;
+    --code-fg:     #D7E3E0;
+    --code-dim:    #5E7A75;
+    --code-key:    #E3A75B;
+    --code-str:    #8FD8A4;
+    --code-num:    #E39C86;
+    --code-arg:    #7FC6D6;
+    --code-line:   #3A4E4A;
+
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: Georgia, "Noto Serif", "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "Roboto Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #0E1514;
+      --surface:     #151F1D;
+      --surface-alt: #1B2725;
+      --ink:         #E7EEEC;
+      --ink-soft:    #C2D0CD;
+      --muted:       #8FA3A0;
+      --line:        #2A3937;
+      --accent:      #59C3BC;
+      --accent-soft: #16302F;
+      --warn:        #D8A34E;
+      --warn-soft:   #2B2418;
+      --pass:        #6BC28C;
+      --fail:        #E0796C;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #0E1514;
+    --surface:     #151F1D;
+    --surface-alt: #1B2725;
+    --ink:         #E7EEEC;
+    --ink-soft:    #C2D0CD;
+    --muted:       #8FA3A0;
+    --line:        #2A3937;
+    --accent:      #59C3BC;
+    --accent-soft: #16302F;
+    --warn:        #D8A34E;
+    --warn-soft:   #2B2418;
+    --pass:        #6BC28C;
+    --fail:        #E0796C;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.72;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 2rem 1.15rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.6rem;
+  }
+
+  /* ---------- Mở đầu ---------- */
+  .masthead { display: flex; flex-direction: column; gap: .7rem; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: .7rem;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+  h1 {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: clamp(1.9rem, 8vw, 2.7rem);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .standfirst {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 1.05rem;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: .73rem;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: .7rem;
+    line-height: 1.9;
+  }
+
+  /* ---------- Mục lục ---------- */
+  details.toc {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: .85rem 1rem;
+  }
+  details.toc summary {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: .9rem;
+    cursor: pointer;
+    color: var(--accent);
+  }
+  details.toc ol {
+    margin: .85rem 0 0;
+    padding-left: 1.3rem;
+    font-family: var(--sans);
+    font-size: .92rem;
+    line-height: 1.85;
+  }
+  details.toc a { color: var(--ink-soft); text-decoration: none; }
+  details.toc a:hover, details.toc a:focus { color: var(--accent); text-decoration: underline; }
+
+  /* ---------- Section ---------- */
+  section { display: flex; flex-direction: column; gap: 1.05rem; scroll-margin-top: 1rem; }
+  .snum {
+    font-family: var(--mono);
+    font-size: .72rem;
+    letter-spacing: .18em;
+    color: var(--accent);
+    margin: 0;
+  }
+  h2 {
+    font-family: var(--sans);
+    font-weight: 750;
+    font-size: clamp(1.3rem, 5.4vw, 1.6rem);
+    line-height: 1.22;
+    letter-spacing: -.01em;
+    margin: -.55rem 0 0;
+    text-wrap: balance;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 1.03rem;
+    line-height: 1.35;
+    margin: .5rem 0 -.4rem;
+    color: var(--ink);
+  }
+  p { margin: 0; }
+  ul, ol { margin: 0; padding-left: 1.35rem; }
+  li { margin-bottom: .45rem; }
+  li:last-child { margin-bottom: 0; }
+  strong { font-weight: 700; color: var(--ink); }
+  a { color: var(--accent); }
+  code {
+    font-family: var(--mono);
+    font-size: .84em;
+    background: var(--surface-alt);
+    border-radius: 3px;
+    padding: .1em .35em;
+    word-break: break-word;
+  }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+  /* ---------- Khối code ---------- */
+  figure.code { margin: 0; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+  figure.code figcaption {
+    background: var(--code-bar);
+    color: var(--code-dim);
+    font-family: var(--mono);
+    font-size: .69rem;
+    padding: .5rem .8rem;
+    display: flex;
+    justify-content: space-between;
+    gap: .8rem;
+    border-bottom: 1px solid #000;
+  }
+  figure.code figcaption b { color: var(--code-fg); font-weight: 500; }
+  .scroller { background: var(--code-bg); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  pre {
+    margin: 0;
+    padding: .85rem 1rem .95rem 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--code-fg);
+    white-space: pre;
+    counter-reset: ln;
+  }
+  pre .l { display: block; }
+  pre .l::before {
+    counter-increment: ln;
+    content: counter(ln);
+    display: inline-block;
+    width: 2.6em;
+    padding-right: .9em;
+    margin-right: .9em;
+    text-align: right;
+    color: var(--code-line);
+    border-right: 1px solid var(--code-line);
+  }
+  .k { color: var(--code-key); }
+  .s { color: var(--code-str); }
+  .n { color: var(--code-num); }
+  .c { color: var(--code-dim); font-style: italic; }
+  .a { color: var(--code-arg); }
+  .swipe {
+    font-family: var(--mono);
+    font-size: .68rem;
+    color: var(--muted);
+    margin: -.5rem 0 0;
+  }
+
+  /* ---------- Callout ---------- */
+  .box {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+    padding: .9rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+  }
+  .box .tag {
+    font-family: var(--mono);
+    font-size: .67rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .box.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .box.warn .tag { color: var(--warn); }
+  .box p, .box ul { font-size: .97rem; }
+
+  /* ---------- Từ điển ---------- */
+  .glossary { display: flex; flex-direction: column; gap: 0; }
+  .term {
+    border-top: 1px solid var(--line);
+    padding: .85rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+  .term:last-child { border-bottom: 1px solid var(--line); }
+  .term dt {
+    font-family: var(--mono);
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .term dt span { color: var(--muted); font-weight: 400; }
+  .term dd { margin: 0; font-size: .98rem; color: var(--ink-soft); }
+
+  /* ---------- Bảng ---------- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-family: var(--sans); font-size: .87rem; }
+  th, td { text-align: left; padding: .6rem .75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--surface-alt); font-weight: 700; white-space: nowrap; font-size: .78rem; letter-spacing: .02em; }
+  tr:last-child td { border-bottom: 0; }
+  td code { background: transparent; padding: 0; color: var(--accent); white-space: nowrap; }
+
+  /* ---------- Sơ đồ ---------- */
+  .diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1rem .6rem; }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .dg-box { fill: var(--surface-alt); stroke: var(--line); }
+  .dg-box-hi { fill: var(--accent-soft); stroke: var(--accent); }
+  .dg-txt { fill: var(--ink); font-family: var(--mono); font-size: 11px; }
+  .dg-note { fill: var(--muted); font-family: var(--sans); font-size: 10px; font-style: italic; }
+  .dg-arrow { stroke: var(--accent); stroke-width: 1.6; fill: none; }
+
+  /* ---------- Footer ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 1.2rem;
+    font-family: var(--sans);
+    font-size: .85rem;
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+  }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Airflow 2.10 · Sổ tay người mới</p>
+    <h1>Mổ xẻ một file DAG</h1>
+    <p class="standfirst">Đọc hiểu từng dòng của <code>shopvn_pipeline.py</code> — không bỏ qua một chữ viết tắt nào. Không cần biết Airflow từ trước.</p>
+    <p class="meta">
+      File gốc: <code>ShopVN/dags/shopvn_pipeline.py</code> · 77 dòng<br>
+      Thời gian đọc: ~20 phút · Đọc được offline trên điện thoại
+    </p>
+  </header>
+
+  <details class="toc">
+    <summary>Mục lục</summary>
+    <ol>
+      <li><a href="#s1">Airflow là gì, giải thích như với người ngoài ngành</a></li>
+      <li><a href="#s2">Từ điển: 14 từ phải hiểu trước khi đọc code</a></li>
+      <li><a href="#s3">Operator là gì? (câu hỏi lớn nhất)</a></li>
+      <li><a href="#s4">Bố cục file: 5 khối, luôn theo thứ tự này</a></li>
+      <li><a href="#s5">Khối 1–2: docstring &amp; import</a></li>
+      <li><a href="#s6">Khối 3: <code>default_args</code></a></li>
+      <li><a href="#s7">Khối 4: khai báo DAG và lịch chạy</a></li>
+      <li><a href="#s8">Khối 5a: sáu task</a></li>
+      <li><a href="#s9">Khối 5b: dòng quan trọng nhất file — dấu <code>&gt;&gt;</code></a></li>
+      <li><a href="#s10">Giải mã tên task: stg, dim, fct, scd2, cdc</a></li>
+      <li><a href="#s11">Bảng tra thuộc tính</a></li>
+      <li><a href="#s12">Năm cái bẫy kinh điển</a></li>
+      <li><a href="#s13">Bốn lệnh để tự tay sờ vào DAG</a></li>
+      <li><a href="#s14">Bài tập &amp; bước tiếp theo</a></li>
+    </ol>
+  </details>
+
+  <!-- ============ 1 ============ -->
+  <section id="s1">
+    <p class="snum">01</p>
+    <h2>Airflow là gì, giải thích như với người ngoài ngành</h2>
+    <p>Hãy tưởng tượng một <strong>bếp trưởng</strong> trong nhà hàng. Bếp trưởng không tự nấu. Việc của ông ta là: biết đúng 6 món cần làm, biết món nào phải xong trước món nào, canh đúng 2 giờ sáng thì hô bắt đầu, và nếu một đầu bếp làm cháy nồi thì bắt làm lại chứ không để cả bữa tiệc đổ vỡ.</p>
+    <p>Airflow chính là ông bếp trưởng đó. Nó <em>không</em> xử lý dữ liệu. Nó chỉ <strong>điều phối</strong>: gọi đúng việc, đúng thứ tự, đúng giờ, và ghi log lại mọi thứ. Người ta gọi loại phần mềm này là <strong>orchestrator</strong> (nhạc trưởng / bộ điều phối).</p>
+    <p>Còn "công thức món ăn" — tức là code thật sự đọc Postgres, chạy SQL — nằm ở file khác: <code>pipeline/tasks.py</code>. File DAG chỉ là <strong>tờ giấy phân công việc</strong> dán trên tường bếp.</p>
+    <div class="box">
+      <span class="tag">Nhớ câu này</span>
+      <p>File DAG trả lời <strong>“làm những việc gì, thứ tự ra sao, lúc mấy giờ”</strong>. Nó không trả lời “làm bằng cách nào”.</p>
+    </div>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section id="s2">
+    <p class="snum">02</p>
+    <h2>Từ điển: 14 từ phải hiểu trước khi đọc code</h2>
+    <p>Đọc lướt một lượt là đủ. Gặp lại từ nào ở phần sau thì lộn về đây tra.</p>
+    <dl class="glossary">
+      <div class="term">
+        <dt>DAG <span>— Directed Acyclic Graph</span></dt>
+        <dd>“Đồ thị có hướng, không có vòng lặp”. Nghe đáng sợ nhưng chỉ nghĩa là: <strong>một sơ đồ các việc nối với nhau bằng mũi tên một chiều, và không được phép quay ngược về chỗ cũ</strong>. A → B → A là sai luật, Airflow sẽ báo lỗi ngay. Trong Airflow, một DAG = một pipeline = một file như file bạn đang học.</dd>
+      </div>
+      <div class="term">
+        <dt>Task <span>— tác vụ</span></dt>
+        <dd>Một việc cụ thể, một ô vuông trên sơ đồ. File này có 6 task.</dd>
+      </div>
+      <div class="term">
+        <dt>Operator <span>— toán tử / khuôn việc</span></dt>
+        <dd>Khuôn mẫu để tạo ra một task. Có cả một mục riêng ở dưới cho từ này.</dd>
+      </div>
+      <div class="term">
+        <dt>Scheduler <span>— bộ lập lịch</span></dt>
+        <dd>Tiến trình chạy nền 24/7 của Airflow. Nó <strong>đọc lại toàn bộ thư mục <code>dags/</code> khoảng mỗi 30 giây</strong> để cập nhật sơ đồ, và canh đồng hồ xem đã tới giờ chạy chưa.</dd>
+      </div>
+      <div class="term">
+        <dt>Worker <span>— thợ</span></dt>
+        <dd>Tiến trình thực sự chạy code của task. Scheduler ra lệnh, worker làm.</dd>
+      </div>
+      <div class="term">
+        <dt>DAG run <span>— một lần chạy</span></dt>
+        <dd>Một lượt chạy của cả pipeline, ứng với một ngày dữ liệu. Chạy 30 ngày = 30 DAG run.</dd>
+      </div>
+      <div class="term">
+        <dt>Task instance <span>— một lần chạy của một task</span></dt>
+        <dd>Ô vuông màu xanh/đỏ bạn thấy trên giao diện web. Xanh = thành công, đỏ = fail, vàng = đang retry.</dd>
+      </div>
+      <div class="term">
+        <dt>Upstream / Downstream</dt>
+        <dd>Thượng nguồn / hạ nguồn, như dòng sông. A chạy trước B thì A là <em>upstream</em> của B, B là <em>downstream</em> của A. Từ này xuất hiện khắp nơi trong tài liệu và log lỗi.</dd>
+      </div>
+      <div class="term">
+        <dt>Retry <span>— chạy lại</span></dt>
+        <dd>Khi task fail, Airflow tự chạy lại thay vì bỏ cuộc. Cấu hình bao nhiêu lần, cách nhau bao lâu.</dd>
+      </div>
+      <div class="term">
+        <dt>Idempotent <span>— chạy lại vẫn ra kết quả cũ</span></dt>
+        <dd>Tính chất bắt buộc của mọi task dữ liệu: chạy 1 lần hay 5 lần thì bảng đích vẫn y hệt nhau, không bị nhân đôi dữ liệu. Vì Airflow tự retry nên nếu code không idempotent, mỗi lần retry là một lần dữ liệu bị nhân bản.</dd>
+      </div>
+      <div class="term">
+        <dt>Catchup <span>— chạy bù</span></dt>
+        <dd>Tính năng Airflow tự chạy bù mọi ngày trong quá khứ kể từ ngày bắt đầu. Cực kỳ dễ gây tai nạn — xem mục Bẫy.</dd>
+      </div>
+      <div class="term">
+        <dt>XCom <span>— cross-communication</span></dt>
+        <dd>Kênh nhắn tin giữa các task, chỉ để gửi giá trị <strong>nhỏ</strong> (một cái tên, một con số, một đường dẫn). Không bao giờ gửi cả bảng dữ liệu qua đây.</dd>
+      </div>
+      <div class="term">
+        <dt>OLTP / OLAP</dt>
+        <dd><strong>OLTP</strong> = database của ứng dụng (Postgres của web bán hàng), tối ưu cho việc ghi từng đơn hàng lẻ thật nhanh. <strong>OLAP</strong> = kho dữ liệu phân tích (DuckDB ở đây, BigQuery ở công ty), tối ưu cho việc quét vài triệu dòng để tính báo cáo. Pipeline này chuyển dữ liệu từ bên trái sang bên phải.</dd>
+      </div>
+      <div class="term">
+        <dt>ELT / ETL</dt>
+        <dd>E = Extract (lấy ra), L = Load (đổ vào kho), T = Transform (biến đổi). <strong>ETL</strong> là biến đổi trước rồi mới đổ vào kho. <strong>ELT</strong> — kiểu hiện đại, và là kiểu của file này — đổ nguyên si vào kho trước, rồi biến đổi ngay bên trong kho bằng SQL. Kho ngày nay đủ mạnh để làm việc đó.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section id="s3">
+    <p class="snum">03</p>
+    <h2>Operator là gì? (câu hỏi lớn nhất)</h2>
+    <p>Airflow không biết công ty bạn làm nghề gì. Nó chỉ biết vài <strong>kiểu việc</strong> phổ biến trên đời: chạy một hàm Python, gõ một lệnh terminal, chạy một câu SQL trên BigQuery, ngồi chờ một file xuất hiện. Mỗi kiểu việc như vậy được Airflow đóng gói sẵn thành một <strong>Operator</strong>.</p>
+
+    <h3>Ví dụ dễ hình dung: Operator là “chức danh”</h3>
+    <ul>
+      <li><code>PythonOperator</code> = chức danh <em>“lập trình viên Python”</em>. Đưa cho người này một hàm Python, họ chạy nó.</li>
+      <li><code>BashOperator</code> = chức danh <em>“anh IT gõ lệnh terminal”</em>. Đưa một dòng lệnh, họ gõ.</li>
+      <li><code>BigQueryInsertJobOperator</code> = <em>“chuyên viên SQL trên BigQuery”</em>.</li>
+      <li><code>EmptyOperator</code> = <em>“cái cọc mốc”</em>. Không làm gì cả, chỉ để gom các nhánh cho sơ đồ dễ nhìn.</li>
+    </ul>
+    <p>Nhưng <strong>chức danh chưa làm được việc gì</strong>. Phải tuyển một người cụ thể và giao việc cụ thể. Trong code, “tuyển người” là viết tên Operator kèm cặp ngoặc đơn:</p>
+
+    <figure class="code">
+      <figcaption><b>Cấu trúc chung của một task</b><span>đây là công thức, không phải file thật</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 0;"><span class="l"><span class="a">PythonOperator</span>(</span><span class="l">    task_id=<span class="s">"ten_hien_tren_giao_dien"</span>,</span><span class="l">    python_callable=ham_can_chay,</span><span class="l">    op_kwargs={<span class="s">"tham_so"</span>: <span class="s">"gia_tri"</span>},</span><span class="l">)</span></pre></div>
+    </figure>
+
+    <ul>
+      <li>Dòng 1 — <strong>chức danh</strong>: dùng loại Operator nào.</li>
+      <li><code>task_id</code> — <strong>tên riêng của nhân viên này</strong>. Đây là cái hiện trên giao diện web, trong log, trong lệnh dòng lệnh.</li>
+      <li><code>python_callable</code> — <strong>việc cụ thể</strong>. “Callable” nghĩa là “thứ có thể gọi được”, tức là <em>tên một hàm</em>.</li>
+      <li><code>op_kwargs</code> — <strong>tham số kèm theo</strong>. “kwargs” là viết tắt của <em>keyword arguments</em> = các tham số có tên trong Python.</li>
+    </ul>
+
+    <div class="box">
+      <span class="tag">Công thức</span>
+      <p><strong>Operator</strong> (cái khuôn có sẵn của Airflow) <strong>+ tham số của bạn = Task</strong> (một việc thật trong pipeline).</p>
+      <p>Nói theo ngôn ngữ Python: Operator là một <em>class</em>; viết <code>PythonOperator(...)</code> là tạo ra một <em>object</em> từ class đó, và object đó chính là task.</p>
+    </div>
+
+    <div class="box warn">
+      <span class="tag">Bẫy cú pháp</span>
+      <p>Viết <code>python_callable=tasks.run_transform</code> — <strong>không có cặp ngoặc <code>()</code> phía sau</strong>.</p>
+      <p>Có ngoặc là <em>gọi hàm ngay lập tức</em>. Không ngoặc là <em>đưa tên hàm cho Airflow giữ, để lát nữa Airflow gọi</em>. Đây là cái người mới sai nhiều nhất. Giống như đưa số điện thoại của thợ sửa ống nước cho quản lý, chứ không phải tự gọi thợ tới ngay bây giờ.</p>
+    </div>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section id="s4">
+    <p class="snum">04</p>
+    <h2>Bố cục file: 5 khối, luôn theo thứ tự này</h2>
+    <p>Mọi file DAG trên đời đều xếp theo đúng trật tự dưới đây. Nhận ra được 5 khối này là bạn đọc được file DAG của bất kỳ ai.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Khối</th><th>Dòng</th><th>Trả lời câu hỏi</th></tr></thead>
+        <tbody>
+          <tr><td>Docstring</td><td>1–9</td><td>Pipeline này để làm gì?</td></tr>
+          <tr><td>Import</td><td>11–17</td><td>Cần mượn công cụ gì?</td></tr>
+          <tr><td><code>default_args</code></td><td>19–24</td><td>Quy định chung cho mọi task?</td></tr>
+          <tr><td><code>with DAG(...)</code></td><td>26–35</td><td>Tên gì, chạy lúc mấy giờ?</td></tr>
+          <tr><td>Task + <code>&gt;&gt;</code></td><td>38–76</td><td>Làm những việc gì, thứ tự nào?</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Và đây là bức tranh mà 77 dòng code đó vẽ ra:</p>
+
+    <div class="diagram">
+      <svg viewBox="0 0 340 400" role="img" aria-label="Sơ đồ luồng: extract_load chạy trước, tách thành hai nhánh song song stg_orders và dim_customers, gộp lại ở fct_orders, rồi tới feature_customer_activity và cuối cùng là data_quality_gate">
+        <defs>
+          <marker id="ah" markerWidth="7" markerHeight="7" refX="5.5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+
+        <rect class="dg-box" x="45" y="6" width="250" height="34" rx="4"/>
+        <text class="dg-txt" x="170" y="27" text-anchor="middle">extract_load_from_postgres</text>
+
+        <path class="dg-arrow" d="M170,40 L170,58 M95,58 L245,58 M95,58 L95,74" marker-end="url(#ah)"/>
+        <path class="dg-arrow" d="M245,58 L245,74" marker-end="url(#ah)"/>
+        <text class="dg-note" x="170" y="53" text-anchor="middle">tách hai nhánh, chạy song song</text>
+
+        <rect class="dg-box" x="20" y="80" width="150" height="34" rx="4"/>
+        <text class="dg-txt" x="95" y="101" text-anchor="middle">stg_orders_dedup…</text>
+
+        <rect class="dg-box" x="170" y="80" width="150" height="34" rx="4"/>
+        <text class="dg-txt" x="245" y="101" text-anchor="middle">dim_customers_scd2</text>
+
+        <path class="dg-arrow" d="M95,114 L95,134 L170,134 L170,152" marker-end="url(#ah)"/>
+        <path class="dg-arrow" d="M245,114 L245,134 L170,134"/>
+        <text class="dg-note" x="170" y="148" text-anchor="middle">gộp lại</text>
+
+        <rect class="dg-box" x="95" y="158" width="150" height="34" rx="4"/>
+        <text class="dg-txt" x="170" y="179" text-anchor="middle">fct_orders</text>
+
+        <path class="dg-arrow" d="M170,192 L170,216" marker-end="url(#ah)"/>
+
+        <rect class="dg-box" x="70" y="222" width="200" height="34" rx="4"/>
+        <text class="dg-txt" x="170" y="243" text-anchor="middle">feature_customer_activity</text>
+
+        <path class="dg-arrow" d="M170,256 L170,280" marker-end="url(#ah)"/>
+
+        <rect class="dg-box-hi" x="70" y="286" width="200" height="34" rx="4"/>
+        <text class="dg-txt" x="170" y="307" text-anchor="middle">data_quality_gate</text>
+
+        <text class="dg-note" x="170" y="340" text-anchor="middle">Cổng chất lượng: fail ở đây =</text>
+        <text class="dg-note" x="170" y="354" text-anchor="middle">chặn dữ liệu bẩn xuống báo cáo</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section id="s5">
+    <p class="snum">05</p>
+    <h2>Khối 1–2: docstring &amp; import</h2>
+
+    <figure class="code">
+      <figcaption><b>dags/shopvn_pipeline.py</b><span>dòng 1–17</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 0;"><span class="l"><span class="s">"""DAG pipeline ShopVN: Postgres (OLTP) -&gt; DuckDB (OLAP) -&gt; BI &amp; AI.</span></span><span class="l"><span class="s"></span></span><span class="l"><span class="s">Đây là DAG CHẠY THẬT, không phải minh họa. Mở Airflow UI ở http://localhost:8080</span></span><span class="l"><span class="s">để trigger và xem log từng task.</span></span><span class="l"><span class="s"></span></span><span class="l"><span class="s">Luồng phụ thuộc:</span></span><span class="l"><span class="s">    extract_load -&gt; stg_orders -&gt; dim_customers_scd -&gt; fct_orders</span></span><span class="l"><span class="s">                 -&gt; feature_customer_activity -&gt; data_quality_gate</span></span><span class="l"><span class="s">"""</span></span><span class="l"></span><span class="l"><span class="k">from</span> datetime <span class="k">import</span> timedelta</span><span class="l"></span><span class="l"><span class="k">import</span> pendulum</span><span class="l"><span class="k">from</span> airflow <span class="k">import</span> DAG</span><span class="l"><span class="k">from</span> airflow.operators.python <span class="k">import</span> PythonOperator</span><span class="l"></span><span class="l"><span class="k">from</span> pipeline <span class="k">import</span> tasks</span></pre></div>
+    </figure>
+
+    <h3>Docstring (dòng 1–9)</h3>
+    <p>Đoạn văn nằm giữa ba dấu nháy kép <code>"""</code>. Trong Python đây là <strong>chú thích chính thức của file</strong>. Người vào sau đọc đúng 9 dòng này là hiểu pipeline làm gì — hãy tập viết nó cho mọi DAG bạn tạo.</p>
+
+    <h3>Import (dòng 11–17)</h3>
+    <ul>
+      <li><code>timedelta</code> — kiểu dữ liệu “khoảng thời gian” của Python. <code>timedelta(minutes=2)</code> nghĩa là “2 phút”. Dùng ở dòng 23.</li>
+      <li><code>pendulum</code> — thư viện ngày giờ mà Airflow dùng thay cho <code>datetime</code> chuẩn, vì nó xử lý múi giờ tử tế hơn.</li>
+      <li><code>DAG</code> — cái class chính, để khai báo pipeline.</li>
+      <li><code>PythonOperator</code> — khuôn việc “chạy một hàm Python”, đúng cái vừa học ở mục 03.</li>
+      <li><code>from pipeline import tasks</code> — <strong>đây là code nghiệp vụ của chính bạn</strong>, nằm ở file <code>pipeline/tasks.py</code>. Cả file DAG không có một dòng SQL nào; toàn bộ nằm bên đó.</li>
+    </ul>
+
+    <div class="box">
+      <span class="tag">Vì sao tách hai file</span>
+      <p>Hàm trong <code>tasks.py</code> là hàm Python thuần, không dính gì tới Airflow — nên bạn <strong>test được nó bằng pytest bình thường</strong>, và mai kia đổi orchestrator vẫn dùng lại được. Đây là cách bố trí chuẩn của các đội DE, không phải sở thích cá nhân.</p>
+    </div>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section id="s6">
+    <p class="snum">06</p>
+    <h2>Khối 3: <code>default_args</code> — quy định chung</h2>
+
+    <figure class="code">
+      <figcaption><b>dags/shopvn_pipeline.py</b><span>dòng 19–24</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 18;"><span class="l">default_args = {</span><span class="l">    <span class="c"># Lỗi mạng thoáng qua khi gọi Postgres là chuyện thường -&gt; tự retry,</span></span><span class="l">    <span class="c"># không cần người thức dậy nửa đêm chạy tay.</span></span><span class="l">    <span class="s">"retries"</span>: <span class="n">3</span>,</span><span class="l">    <span class="s">"retry_delay"</span>: timedelta(minutes=<span class="n">2</span>),</span><span class="l">}</span></pre></div>
+    </figure>
+
+    <p>Đây chỉ là một <strong>dict Python bình thường</strong> — cặp “tên: giá trị” đặt trong ngoặc nhọn. Không có phép thuật gì. Nó trở nên đặc biệt vì ở dòng 29 ta đưa nó cho DAG, và Airflow sẽ <strong>áp các giá trị này cho từng task</strong> trong DAG. Task nào tự khai riêng thì giá trị riêng thắng.</p>
+    <p>Đọc thành lời: <em>“mọi task trong pipeline này, nếu fail thì thử lại tối đa 3 lần, mỗi lần cách nhau 2 phút.”</em> Nghĩa là task phải fail 4 lần liên tiếp mới thực sự báo đỏ.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Key hay gặp</th><th>Ý nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>retries</code></td><td>Thử lại mấy lần</td></tr>
+          <tr><td><code>retry_delay</code></td><td>Mỗi lần cách nhau bao lâu</td></tr>
+          <tr><td><code>owner</code></td><td>Tên người/đội chịu trách nhiệm, hiện trên giao diện</td></tr>
+          <tr><td><code>execution_timeout</code></td><td>Quá giờ thì giết task — chống query treo cả đêm</td></tr>
+          <tr><td><code>email_on_failure</code></td><td>Fail thì gửi mail</td></tr>
+          <tr><td><code>depends_on_past</code></td><td>Task hôm nay chỉ chạy nếu chính nó hôm qua đã thành công</td></tr>
+          <tr><td><code>on_failure_callback</code></td><td>Hàm chạy khi fail — chỗ để bắn thông báo Slack/Teams</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 7 ============ -->
+  <section id="s7">
+    <p class="snum">07</p>
+    <h2>Khối 4: khai báo DAG và lịch chạy</h2>
+    <p>Đây là khối dày đặc khái niệm nhất trong cả file.</p>
+
+    <figure class="code">
+      <figcaption><b>dags/shopvn_pipeline.py</b><span>dòng 26–35</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 25;"><span class="l"><span class="k">with</span> DAG(</span><span class="l">    dag_id=<span class="s">"shopvn_pipeline"</span>,</span><span class="l">    description=<span class="s">"ELT: Postgres OLTP -&gt; DuckDB warehouse -&gt; star schema"</span>,</span><span class="l">    default_args=default_args,</span><span class="l">    <span class="c"># datetime CÓ timezone -&gt; Airflow hiểu lịch đúng giờ VN (không phải UTC).</span></span><span class="l">    start_date=pendulum.datetime(<span class="n">2026</span>, <span class="n">7</span>, <span class="n">1</span>, tz=<span class="s">"Asia/Ho_Chi_Minh"</span>),</span><span class="l">    schedule=<span class="s">"0 2 * * *"</span>,   <span class="c"># 2h sáng mỗi ngày</span></span><span class="l">    catchup=<span class="k">False</span>,          <span class="c"># không chạy bù các ngày quá khứ</span></span><span class="l">    tags=[<span class="s">"shopvn"</span>, <span class="s">"elt"</span>, <span class="s">"duckdb"</span>],</span><span class="l">) <span class="k">as</span> dag:</span></pre></div>
+    </figure>
+
+    <h3><code>with ... as dag:</code> — cái tiện lợi ngầm</h3>
+    <p><code>with</code> trong Python tạo ra một “vùng” có thụt lề. Ở đây nó có tác dụng rất cụ thể: <strong>mọi task viết bên trong vùng này tự động được gắn vào DAG</strong>, khỏi phải ghi <code>dag=dag</code> cho từng task một. Đó là lý do toàn bộ phần còn lại của file bị thụt vào 4 khoảng trắng.</p>
+
+    <h3><code>dag_id</code> — tên định danh</h3>
+    <p>Là <strong>khóa chính</strong> của pipeline trong database nội bộ của Airflow. Đổi <code>dag_id</code> = Airflow coi như một pipeline hoàn toàn mới và mất sạch lịch sử chạy cũ. Đừng đổi tùy hứng.</p>
+
+    <h3><code>start_date</code> — ngày dữ liệu bắt đầu</h3>
+    <p>Không phải “ngày tôi bật DAG”. Nó là <strong>mốc dữ liệu bắt đầu có ý nghĩa</strong>. Bắt buộc dùng ngày giờ có kèm múi giờ (<code>tz="Asia/Ho_Chi_Minh"</code>), nếu quên thì Airflow hiểu là giờ UTC và toàn bộ lịch lệch 7 tiếng.</p>
+
+    <h3><code>schedule</code> — chuỗi cron</h3>
+    <p><code>"0 2 * * *"</code> là <strong>cron</strong>, một quy ước đặt lịch có từ thời Unix, gồm 5 ô cách nhau bởi dấu cách:</p>
+    <figure class="code">
+      <figcaption><b>Cách đọc chuỗi cron</b><span>5 ô</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 0;"><span class="l"><span class="n">0</span>   <span class="n">2</span>   <span class="a">*</span>   <span class="a">*</span>   <span class="a">*</span></span><span class="l"><span class="c">│   │   │   │   │</span></span><span class="l"><span class="c">│   │   │   │   └── thứ trong tuần (0-6)</span></span><span class="l"><span class="c">│   │   │   └────── tháng (1-12)</span></span><span class="l"><span class="c">│   │   └────────── ngày trong tháng (1-31)</span></span><span class="l"><span class="c">│   └────────────── giờ (0-23)</span></span><span class="l"><span class="c">└────────────────── phút (0-59)</span></span><span class="l"></span><span class="l"><span class="c"># dấu * = "mọi giá trị" -&gt; 2 giờ 0 phút, mọi ngày, mọi tháng</span></span></pre></div>
+    </figure>
+    <p>Ngoài cron, ô này còn nhận: <code>"@daily"</code>, <code>timedelta(hours=6)</code>, hoặc <code>None</code> (chỉ chạy khi bấm tay).</p>
+
+    <div class="box warn">
+      <span class="tag">Khái niệm khó nhất của Airflow</span>
+      <p><strong>Một lần chạy luôn diễn ra ở CUỐI khoảng dữ liệu mà nó xử lý.</strong></p>
+      <p>DAG run mang nhãn ngày <code>01/07</code> thật ra khởi động lúc <code>02/07 lúc 2h sáng</code> — vì nó xử lý trọn vẹn dữ liệu của ngày 01/07, mà muốn trọn vẹn thì phải đợi hết ngày. Khoảng đó gọi là <strong>data interval</strong>, còn cái nhãn ngày gọi là <strong>logical date</strong> (tên cũ: <em>execution date</em>).</p>
+      <p>Nên khi thấy nhãn ghi hôm qua mà log ghi hôm nay, đó là <em>đúng</em>, không phải lỗi. Và đây chính là lý do người ta hay hẹn job lúc 2h sáng: để chốt sổ trọn ngày hôm trước.</p>
+    </div>
+
+    <h3><code>catchup=False</code></h3>
+    <p>Vì <code>start_date</code> là 01/07 mà hôm nay đã là tháng 8, nếu để <code>catchup=True</code> thì ngay khi bật DAG, Airflow sẽ đẻ ra <strong>hàng chục DAG run của quá khứ chạy cùng lúc</strong>. Để <code>False</code> nghĩa là: chỉ chạy từ bây giờ trở đi.</p>
+
+    <h3><code>tags</code></h3>
+    <p>Nhãn để lọc trên giao diện web. Công ty có 300 DAG thì cái này cứu bạn.</p>
+  </section>
+
+  <!-- ============ 8 ============ -->
+  <section id="s8">
+    <p class="snum">08</p>
+    <h2>Khối 5a: sáu task</h2>
+
+    <figure class="code">
+      <figcaption><b>dags/shopvn_pipeline.py</b><span>dòng 37–48</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 36;"><span class="l">    <span class="c"># ----- E + L: task duy nhất chạm vào Postgres production -----</span></span><span class="l">    extract_load = PythonOperator(</span><span class="l">        task_id=<span class="s">"extract_load_from_postgres"</span>,</span><span class="l">        python_callable=tasks.extract_load,</span><span class="l">    )</span><span class="l"></span><span class="l">    <span class="c"># ----- T: toàn bộ transform chạy trong DuckDB -----</span></span><span class="l">    stg_orders = PythonOperator(</span><span class="l">        task_id=<span class="s">"stg_orders_dedup_cdc"</span>,</span><span class="l">        python_callable=tasks.run_transform,</span><span class="l">        op_kwargs={<span class="s">"sql_file"</span>: <span class="s">"01_stg_orders.sql"</span>},</span><span class="l">    )</span></pre></div>
+    </figure>
+
+    <h3>Hai cái tên khác nhau — chỗ này hay nhầm</h3>
+    <ul>
+      <li><code>extract_load</code> ở đầu dòng 38 là <strong>tên biến Python</strong>. Nó chỉ tồn tại trong file này, dùng để lát nữa viết thứ tự ở dòng 76.</li>
+      <li><code>"extract_load_from_postgres"</code> trong <code>task_id</code> là <strong>tên chính thức</strong>. Đây mới là cái hiện trên web, trong log, trong lệnh CLI.</li>
+    </ul>
+    <p>Hai cái này hoàn toàn có thể đặt khác nhau, nhưng nên để chúng gần giống nhau cho đỡ rối khi debug.</p>
+
+    <h3>Một hàm, bốn task</h3>
+    <p>Bốn task transform (dòng 44–66) đều gọi <strong>cùng một hàm</strong> <code>tasks.run_transform</code>. Cái làm chúng khác nhau là <code>op_kwargs</code> — mỗi task truyền vào một tên file SQL khác. Airflow sẽ bung dict đó ra thành tham số khi gọi hàm:</p>
+
+    <figure class="code">
+      <figcaption><b>op_kwargs biến thành lời gọi hàm như thế nào</b><span>minh họa</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 0;"><span class="l"><span class="c"># bạn viết trong DAG:</span></span><span class="l">op_kwargs={<span class="s">"sql_file"</span>: <span class="s">"01_stg_orders.sql"</span>}</span><span class="l"></span><span class="l"><span class="c"># tới giờ chạy, Airflow gọi:</span></span><span class="l">tasks.run_transform(sql_file=<span class="s">"01_stg_orders.sql"</span>)</span></pre></div>
+    </figure>
+
+    <p>Đây là một thói quen tốt cần học sớm: <strong>một hàm chạy được mọi file SQL, thêm model mới chỉ cần thêm 5 dòng khai báo task</strong>, thay vì copy-paste 4 hàm gần giống nhau.</p>
+  </section>
+
+  <!-- ============ 9 ============ -->
+  <section id="s9">
+    <p class="snum">09</p>
+    <h2>Khối 5b: dòng quan trọng nhất file</h2>
+
+    <figure class="code">
+      <figcaption><b>dags/shopvn_pipeline.py</b><span>dòng 74–76</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 73;"><span class="l">    <span class="c"># fct_orders cần CẢ stg_orders và dim_customers_scd -&gt; Airflow tự chạy</span></span><span class="l">    <span class="c"># song song hai nhánh này rồi mới tới fct_orders.</span></span><span class="l">    extract_load &gt;&gt; [stg_orders, dim_customers] &gt;&gt; fct_orders &gt;&gt; features &gt;&gt; dq_gate</span></pre></div>
+    </figure>
+    <p class="swipe">↔ vuốt ngang khối trên để xem hết dòng 76</p>
+
+    <p>Đúng một dòng này vẽ ra toàn bộ sơ đồ ở mục 04.</p>
+
+    <h3>Dấu <code>&gt;&gt;</code> đọc là “rồi tới”</h3>
+    <p><code>a &gt;&gt; b</code> nghĩa là <em>“a xong rồi mới tới b”</em>. Python cho phép thư viện tự định nghĩa lại ý nghĩa của các ký hiệu toán tử, và Airflow đã tận dụng điều đó để thứ tự công việc nhìn giống một mũi tên. Ba cách viết sau tương đương:</p>
+    <figure class="code">
+      <figcaption><b>Ba cách viết cùng một ý</b><span>chọn cách 1</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 0;"><span class="l">a &gt;&gt; b                    <span class="c"># phổ biến nhất, nên dùng</span></span><span class="l">b &lt;&lt; a                    <span class="c"># ngược chiều, dễ đọc nhầm</span></span><span class="l">a.set_downstream(b)       <span class="c"># kiểu cũ, còn gặp ở code cũ</span></span></pre></div>
+    </figure>
+
+    <h3>Dấu ngoặc vuông <code>[ ]</code> = chạy song song</h3>
+    <p><code>extract_load &gt;&gt; [stg_orders, dim_customers]</code> nghĩa là sau khi <code>extract_load</code> xong, <strong>cả hai</strong> task trong danh sách được thả ra cùng lúc. Chúng không chờ nhau, vì chẳng cái nào cần kết quả của cái kia. Rồi <code>[...] &gt;&gt; fct_orders</code> nghĩa là <code>fct_orders</code> phải đợi <strong>cả hai</strong> xong mới được chạy.</p>
+    <p>Người ta gọi hai hình dạng này là <strong>fan-out</strong> (tỏa ra) và <strong>fan-in</strong> (gom lại).</p>
+
+    <div class="box">
+      <span class="tag">Luật mặc định</span>
+      <p>Task chỉ chạy khi <strong>tất cả</strong> task upstream đều thành công. Luật này có tên là <code>trigger_rule="all_success"</code>. Muốn một task chạy kể cả khi upstream fail (ví dụ task dọn dẹp, task báo động), đặt <code>trigger_rule="all_done"</code>.</p>
+    </div>
+  </section>
+
+  <!-- ============ 10 ============ -->
+  <section id="s10">
+    <p class="snum">10</p>
+    <h2>Giải mã tên task: stg, dim, fct, scd2, cdc</h2>
+    <p>Những chữ viết tắt này không phải của Airflow — chúng là <strong>tiếng lóng chung của nghề Data Engineer</strong>, xuất hiện trong mọi dự án bạn sẽ gặp. Hiểu chúng quan trọng ngang hiểu cú pháp.</p>
+    <dl class="glossary">
+      <div class="term">
+        <dt>raw_ <span>— dữ liệu thô</span></dt>
+        <dd>Bản sao y nguyên từ hệ thống nguồn, chưa đụng vào gì. Giữ nguyên si để khi phát hiện sai sót còn có bản gốc mà lần lại.</dd>
+      </div>
+      <div class="term">
+        <dt>stg_ <span>— staging</span></dt>
+        <dd>Tầng trung gian: đã làm sạch nhẹ (đổi tên cột, ép kiểu, khử trùng lặp) nhưng chưa gộp bảng, chưa tính toán nghiệp vụ.</dd>
+      </div>
+      <div class="term">
+        <dt>dedup <span>— deduplicate</span></dt>
+        <dd>Khử bản ghi trùng. Hệ thống nguồn hay gửi trùng, hoặc một đơn hàng bị sửa 3 lần thì có 3 bản ghi — chỉ giữ bản mới nhất.</dd>
+      </div>
+      <div class="term">
+        <dt>CDC <span>— Change Data Capture</span></dt>
+        <dd>“Bắt thay đổi”: cơ chế chỉ lấy về những bản ghi mới thêm / mới sửa / mới xóa kể từ lần chạy trước, thay vì chép lại cả bảng 50 triệu dòng mỗi đêm.</dd>
+      </div>
+      <div class="term">
+        <dt>dim_ <span>— dimension, bảng chiều</span></dt>
+        <dd>Bảng mô tả <em>“ai / cái gì”</em>: khách hàng, sản phẩm, cửa hàng. Thay đổi chậm, dùng để lọc và nhóm báo cáo.</dd>
+      </div>
+      <div class="term">
+        <dt>fct_ <span>— fact, bảng sự kiện</span></dt>
+        <dd>Bảng ghi <em>“chuyện gì đã xảy ra, bao nhiêu tiền”</em>: từng đơn hàng, từng lượt xem. Rất nhiều dòng, chứa các con số để cộng lại.</dd>
+      </div>
+      <div class="term">
+        <dt>Star schema <span>— lược đồ hình sao</span></dt>
+        <dd>Cách sắp bảng kinh điển của kho dữ liệu: một bảng <code>fct</code> ở giữa, các bảng <code>dim</code> vây quanh nối vào — vẽ ra trông như ngôi sao. Báo cáo BI chạy nhanh trên cấu trúc này.</dd>
+      </div>
+      <div class="term">
+        <dt>SCD2 <span>— Slowly Changing Dimension type 2</span></dt>
+        <dd>Cách lưu <strong>lịch sử</strong> của bảng chiều. Khách đổi địa chỉ từ Hà Nội vào Sài Gòn: thay vì ghi đè, ta đóng dòng cũ lại (<code>valid_to = hôm nay</code>) và thêm dòng mới. Nhờ vậy báo cáo tháng trước vẫn đúng là “doanh thu Hà Nội”, không bị viết lại lịch sử.</dd>
+      </div>
+      <div class="term">
+        <dt>DQ gate <span>— data quality gate</span></dt>
+        <dd>Cổng kiểm định. Chạy một loạt câu SQL kiểm tra (đơn hàng có bị trùng ID không, số tiền có âm không). Có lỗi thì <strong>cố tình cho task fail</strong> để pipeline dừng lại — thà không có báo cáo còn hơn có báo cáo sai.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- ============ 11 ============ -->
+  <section id="s11">
+    <p class="snum">11</p>
+    <h2>Bảng tra thuộc tính</h2>
+    <p>Mở lại khi cần, không cần học thuộc.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Thuộc tính của DAG</th><th>Ý nghĩa</th></tr></thead>
+        <tbody>
+          <tr><td><code>dag_id</code></td><td>Tên định danh, duy nhất trong cả hệ thống</td></tr>
+          <tr><td><code>description</code></td><td>Mô tả một dòng, hiện trên giao diện</td></tr>
+          <tr><td><code>start_date</code></td><td>Mốc dữ liệu bắt đầu (phải có múi giờ)</td></tr>
+          <tr><td><code>schedule</code></td><td>Lịch chạy: cron, <code>@daily</code>, timedelta hoặc <code>None</code></td></tr>
+          <tr><td><code>catchup</code></td><td>Có chạy bù quá khứ không</td></tr>
+          <tr><td><code>default_args</code></td><td>Giá trị mặc định áp cho mọi task</td></tr>
+          <tr><td><code>tags</code></td><td>Nhãn để lọc trên giao diện</td></tr>
+          <tr><td><code>max_active_runs</code></td><td>Cho phép bao nhiêu lần chạy song song của cùng DAG</td></tr>
+          <tr><td><code>dagrun_timeout</code></td><td>Cả pipeline quá giờ thì hủy</td></tr>
+          <tr><td><code>params</code></td><td>Tham số cho người dùng nhập khi bấm chạy tay</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Operator hay dùng</th><th>Việc nó làm</th></tr></thead>
+        <tbody>
+          <tr><td><code>PythonOperator</code></td><td>Chạy một hàm Python</td></tr>
+          <tr><td><code>BashOperator</code></td><td>Chạy một lệnh terminal (hay dùng để gọi <code>dbt run</code>)</td></tr>
+          <tr><td><code>EmptyOperator</code></td><td>Không làm gì, chỉ làm mốc gom nhánh</td></tr>
+          <tr><td><code>BigQueryInsertJobOperator</code></td><td>Chạy SQL trên BigQuery</td></tr>
+          <tr><td><code>ExternalTaskSensor</code></td><td>Ngồi chờ một task ở DAG khác xong</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 12 ============ -->
+  <section id="s12">
+    <p class="snum">12</p>
+    <h2>Năm cái bẫy kinh điển</h2>
+
+    <h3>1. Viết code nặng ở ngoài hàm</h3>
+    <p>Scheduler import lại file này <strong>mỗi 30 giây</strong>. Mọi thứ viết ở cấp ngoài cùng (không nằm trong hàm) sẽ chạy lại mỗi 30 giây.</p>
+    <figure class="code">
+      <figcaption><b>Sai vs Đúng</b><span>lỗi số 1 của người mới</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 0;"><span class="l"><span class="c"># ❌ SAI: truy vấn database mỗi 30 giây, giết scheduler</span></span><span class="l">df = pd.read_sql(<span class="s">"SELECT * FROM orders"</span>, conn)</span><span class="l"></span><span class="l"><span class="c"># ✅ ĐÚNG: bọc trong hàm, chỉ chạy khi task tới lượt</span></span><span class="l"><span class="k">def</span> extract():</span><span class="l">    df = pd.read_sql(<span class="s">"SELECT * FROM orders"</span>, conn)</span></pre></div>
+    </figure>
+
+    <h3>2. Quên múi giờ trong <code>start_date</code></h3>
+    <p>Không ghi <code>tz=</code> thì Airflow hiểu là UTC, và mọi job lệch 7 tiếng so với giờ Việt Nam.</p>
+
+    <h3>3. Bật <code>catchup=True</code> với <code>start_date</code> xa</h3>
+    <p>Bật DAG lên, Airflow lập tức tạo hàng trăm lần chạy quá khứ, đè sập database nguồn. Đây là tai nạn nổi tiếng nhất của người mới.</p>
+
+    <h3>4. Gọi hàm thay vì truyền hàm</h3>
+    <p><code>python_callable=my_func()</code> — thừa cặp ngoặc. Hàm chạy ngay lúc scheduler đọc file, và task thật thì trắng trơn.</p>
+
+    <h3>5. Code không idempotent</h3>
+    <p>Nếu task dùng <code>INSERT INTO</code>, mỗi lần retry là một lần dữ liệu bị nhân đôi. Dùng <code>CREATE OR REPLACE</code> hoặc <code>MERGE</code> — chính là cách <code>tasks.py</code> đang làm.</p>
+  </section>
+
+  <!-- ============ 13 ============ -->
+  <section id="s13">
+    <p class="snum">13</p>
+    <h2>Bốn lệnh để tự tay sờ vào DAG</h2>
+    <p>Chạy từ thư mục <code>~/Desktop/Test/ShopVN</code> khi đã bật <code>docker compose up</code>.</p>
+
+    <figure class="code">
+      <figcaption><b>terminal</b><span>chạy lần lượt 1 → 4</span></figcaption>
+      <div class="scroller"><pre style="counter-reset: ln 0;"><span class="l"><span class="c"># 1. File có lỗi cú pháp / lỗi import không?</span></span><span class="l">docker compose exec airflow \</span><span class="l">  python /opt/airflow/dags/shopvn_pipeline.py</span><span class="l"></span><span class="l"><span class="c"># 2. Airflow có nhìn thấy DAG không?</span></span><span class="l">docker compose exec airflow airflow dags list</span><span class="l">docker compose exec airflow airflow dags list-import-errors</span><span class="l"></span><span class="l"><span class="c"># 3. Xem cây phụ thuộc — đối chiếu với dòng 76</span></span><span class="l">docker compose exec airflow \</span><span class="l">  airflow tasks list shopvn_pipeline --tree</span><span class="l"></span><span class="l"><span class="c"># 4. Chạy THỬ đúng 1 task, không đụng tới scheduler</span></span><span class="l">docker compose exec airflow \</span><span class="l">  airflow tasks test shopvn_pipeline stg_orders_dedup_cdc <span class="n">2026-08-12</span></span></pre></div>
+    </figure>
+
+    <div class="box">
+      <span class="tag">Ghi nhớ</span>
+      <p>Lệnh số 4 (<code>airflow tasks test</code>) là công cụ debug tốt nhất mà Airflow có. Nó chạy đúng một task, in log thẳng ra màn hình, không tạo bản ghi lịch sử, không cần bật scheduler. Người làm DE dùng nó mỗi ngày.</p>
+    </div>
+  </section>
+
+  <!-- ============ 14 ============ -->
+  <section id="s14">
+    <p class="snum">14</p>
+    <h2>Bài tập &amp; bước tiếp theo</h2>
+
+    <h3>Bài tập (làm khi mở lại máy)</h3>
+    <ol>
+      <li>Thêm một task <code>EmptyOperator(task_id="pipeline_done")</code> chạy sau <code>dq_gate</code>.</li>
+      <li>Thêm task <code>notify_failed</code> với <code>trigger_rule="all_done"</code> cũng gắn sau <code>dq_gate</code>, để nó chạy kể cả khi cổng chất lượng fail.</li>
+      <li>Chạy lệnh 1 và lệnh 3 ở mục trên để tự kiểm tra sơ đồ đã đúng ý chưa.</li>
+    </ol>
+    <p>Làm xong ba bước này là bạn đã tự tay sửa một DAG, không còn chỉ đọc.</p>
+
+    <h3>Một lưu ý về code ở công ty</h3>
+    <p>Repo airflow-dbt của đội nhiều khả năng viết theo kiểu <strong>TaskFlow API</strong> — dùng <code>@dag</code> và <code>@task</code> đặt phía trên hàm (gọi là <em>decorator</em>) thay cho <code>with DAG(...)</code> và Operator. Đừng hoảng: bản chất y hệt. Decorator chỉ là cách viết gọn để Python tự sinh ra Operator giùm bạn. Dấu <code>&gt;&gt;</code>, <code>schedule</code>, <code>catchup</code>, <code>retries</code> — tất cả không đổi một chữ.</p>
+
+    <h3>Thứ tự nên học tiếp</h3>
+    <ol>
+      <li>Jinja template: <code>{{ ds }}</code>, <code>{{ data_interval_start }}</code> — cách nhét ngày chạy vào câu SQL.</li>
+      <li>Connections &amp; Variables: chỗ cất mật khẩu, đừng bao giờ viết mật khẩu thẳng trong file DAG.</li>
+      <li>Sensor và Dataset: cách để DAG này tự chạy khi DAG kia ghi xong dữ liệu.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p>Sổ tay đọc file <code>ShopVN/dags/shopvn_pipeline.py</code> · Airflow 2.10.5</p>
+    <p>Mọi khối code trong trang này trích nguyên văn từ file thật, kèm số dòng gốc — mở file ra là đối chiếu được ngay.</p>
+  </footer>
+
+</div>

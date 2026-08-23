@@ -1,0 +1,7 @@
+venv/
+target/
+logs/
+lab.duckdb
+.tien_do.json
+dbt_packages/
+lab.html
